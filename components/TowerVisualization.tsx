@@ -29,7 +29,7 @@ export default function TowerVisualization({ tower, isActive, progress }: TowerV
       {/* Tower/Building image */}
       <View style={styles.houseContainer}>
         <Image
-          source={{ uri: 'https://raw.githubusercontent.com/aofnfp/focusflow/main/Beige%20single-story%20house.png' }}
+          source={require('@/assets/images/building/Beige single-story house.png')}
           style={[
             styles.houseImage,
             {

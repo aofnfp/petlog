@@ -50,40 +50,55 @@ export default function HomeScreen() {
 
   const buildingScaleAnim = useRef(new Animated.Value(1)).current;
   const progressAnim = useRef(new Animated.Value(0)).current;
+  const buildingHeightAnim = useRef(new Animated.Value(160)).current; // Full height when complete
   const [showGiveUpModal, setShowGiveUpModal] = useState(false);
   const [buildingState, setBuildingState] = useState<'preview' | 'foundation' | 'constructing' | 'completed'>('preview');
-  const [segmentVisibility, setSegmentVisibility] = useState([true, true, true, true, true]); // Track which segments are visible
-  const towerSegmentAnims = useRef([
-    new Animated.Value(1), // All segments visible initially for preview
-    new Animated.Value(1),
-    new Animated.Value(1),
-    new Animated.Value(1),
-    new Animated.Value(1),
-  ]).current;
 
   const timeRemaining = currentSession?.remaining || null;
-  const sessionProgress = currentSession?.isActive 
+  const sessionProgress = currentSession?.isActive
     ? (currentSession.duration - (currentSession.remaining || 0)) / currentSession.duration
     : 0;
 
+  // Set building state based on session status
   useEffect(() => {
-    // Set initial state based on session
     if (!currentSession?.isActive) {
       setBuildingState('preview');
-      // Show full building in preview
-      towerSegmentAnims.forEach(anim => anim.setValue(1));
-      setSegmentVisibility([true, true, true, true, true]);
+      // Show complete building when not in session
+      Animated.timing(buildingHeightAnim, {
+        toValue: 160,
+        duration: 500,
+        useNativeDriver: false,
+      }).start();
+    } else if (currentSession.isActive && buildingState === 'preview') {
+      // Just started session, will be set to constructing by handleStartBuilding
     }
-  }, [currentSession?.isActive, towerSegmentAnims]);
+  }, [currentSession?.isActive]);
 
+  // Animate progress ring
   useEffect(() => {
-    // Animate progress
     Animated.timing(progressAnim, {
       toValue: sessionProgress,
       duration: 300,
       useNativeDriver: false,
     }).start();
   }, [sessionProgress, progressAnim]);
+
+  // Animate building height based on session progress
+  useEffect(() => {
+    if (currentSession?.isActive && buildingState === 'constructing') {
+      const targetHeight = 160 * sessionProgress; // Build from 0 to 160 based on progress
+      Animated.timing(buildingHeightAnim, {
+        toValue: targetHeight,
+        duration: 500,
+        useNativeDriver: false,
+      }).start();
+
+      // Check if completed
+      if (sessionProgress >= 1) {
+        setBuildingState('completed');
+      }
+    }
+  }, [sessionProgress, currentSession?.isActive, buildingState]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -128,7 +143,7 @@ export default function HomeScreen() {
       // Show give up confirmation
       setShowGiveUpModal(true);
     } else {
-      // Animate from preview to foundation, then start session
+      // Animate building breakdown to foundation, then start session
       animateToFoundation(() => {
         const tagName = getSelectedTagName() || activeTab?.label || 'Building';
         startSession(selectedTab, selectedDuration * 60, tagName);
@@ -139,20 +154,12 @@ export default function HomeScreen() {
 
   const animateToFoundation = (callback: () => void) => {
     setBuildingState('foundation');
-    // Compress down animation - segments disappear from top to bottom
-    const compressAnimations = towerSegmentAnims.slice().reverse().map((anim, index) => {
-      return Animated.sequence([
-        Animated.delay(index * 40),
-        Animated.timing(anim, {
-          toValue: 0,
-          duration: 180,
-          useNativeDriver: true,
-        }),
-      ]);
-    });
-
-    Animated.parallel(compressAnimations).start(() => {
-      setSegmentVisibility([false, false, false, false, false]);
+    // Animate the building breaking down to foundation (height goes to 0)
+    Animated.timing(buildingHeightAnim, {
+      toValue: 0,
+      duration: 800,
+      useNativeDriver: false,
+    }).start(() => {
       callback();
     });
   };
@@ -165,83 +172,30 @@ export default function HomeScreen() {
       // Reset to preview state after give up
       setTimeout(() => {
         setBuildingState('preview');
-        setSegmentVisibility([true, true, true, true, true]);
-        towerSegmentAnims.forEach(anim => {
-          Animated.timing(anim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-          }).start();
-        });
       }, 500);
     });
   };
 
   const animateCollapse = (callback: () => void) => {
     setBuildingState('foundation');
-    // Collapse animation - only top segments fall
-    const visibleSegmentIndices: number[] = [];
-    [0.2, 0.4, 0.6, 0.8, 0.98].forEach((threshold, index) => {
-      if (sessionProgress >= threshold) {
-        visibleSegmentIndices.push(index);
-      }
-    });
-    
-    // Collapse only the top 2 visible segments
-    const segmentsToCollapse = visibleSegmentIndices.slice(-2);
-    const collapseAnimations = segmentsToCollapse.map((segmentIndex, animIndex) => {
-      return Animated.sequence([
-        Animated.delay(animIndex * 80),
-        Animated.timing(towerSegmentAnims[segmentIndex], {
-          toValue: 0,
-          duration: 280,
-          useNativeDriver: true,
-        }),
-      ]);
-    });
-
-    if (collapseAnimations.length > 0) {
-      Animated.parallel(collapseAnimations).start(() => {
-        // Reset all segments
-        towerSegmentAnims.forEach(anim => anim.setValue(0));
-        setSegmentVisibility([false, false, false, false, false]);
-        callback();
-      });
-    } else {
+    // Animate the building collapse (height goes to 0, then back to full preview)
+    Animated.timing(buildingHeightAnim, {
+      toValue: 0,
+      duration: 400,
+      useNativeDriver: false,
+    }).start(() => {
       callback();
-    }
+      // After stopping session, animate back to full building
+      setTimeout(() => {
+        Animated.timing(buildingHeightAnim, {
+          toValue: 160,
+          duration: 600,
+          useNativeDriver: false,
+        }).start();
+      }, 100);
+    });
   };
 
-  // Update tower segments based on progress - spans entire session duration
-  useEffect(() => {
-    if (currentSession?.isActive && buildingState === 'constructing') {
-      // Map progress to building segments (0.2, 0.4, 0.6, 0.8, 0.98)
-      const segmentThresholds = [0.2, 0.4, 0.6, 0.8, 0.98];
-      const newVisibility = [...segmentVisibility];
-      
-      segmentThresholds.forEach((threshold, index) => {
-        if (sessionProgress >= threshold && !segmentVisibility[index]) {
-          newVisibility[index] = true;
-          Animated.spring(towerSegmentAnims[index], {
-            toValue: 1,
-            friction: 5,
-            tension: 50,
-            useNativeDriver: true,
-          }).start();
-        }
-      });
-      
-      if (JSON.stringify(newVisibility) !== JSON.stringify(segmentVisibility)) {
-        setSegmentVisibility(newVisibility);
-      }
-      
-      // Check if completed
-      if (sessionProgress >= 1) {
-        setBuildingState('completed');
-        // Could add confetti or celebration here
-      }
-    }
-  }, [sessionProgress, currentSession?.isActive, buildingState, segmentVisibility, towerSegmentAnims]);
 
   const displayTime = timeRemaining !== null 
     ? formatTime(timeRemaining) 
@@ -361,12 +315,25 @@ export default function HomeScreen() {
       height: 160,
       resizeMode: 'contain' as const,
     },
-    progressOverlay: {
+    buildingAnimationContainer: {
+      alignItems: 'center',
+      justifyContent: 'flex-end',
+      width: 120,
+    },
+    foundationIndicator: {
       position: 'absolute' as const,
-      bottom: 0,
-      left: -60,
-      right: -60,
-      opacity: 0.1,
+      bottom: -20,
+      left: 0,
+      right: 0,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+    foundationBase: {
+      width: 100,
+      height: 8,
+      backgroundColor: '#8B7355',
+      borderRadius: 4,
+      opacity: 0.8,
     },
 
     intentionBanner: {
@@ -765,45 +732,35 @@ export default function HomeScreen() {
                     { transform: [{ scale: buildingScaleAnim }] }
                   ]}
                 >
-                  {/* Building Image */}
+                  {/* Building Visualization - Single animated building */}
                   <Animated.View
                     style={[
+                      styles.buildingAnimationContainer,
                       {
-                        opacity: progressAnim.interpolate({
-                          inputRange: [0, 0.2, 1],
-                          outputRange: [0.3, 0.6, 1],
-                        }),
-                        transform: [
-                          {
-                            scale: progressAnim.interpolate({
-                              inputRange: [0, 1],
-                              outputRange: [0.9, 1],
-                            }),
-                          },
-                        ],
+                        height: buildingHeightAnim,
+                        overflow: 'hidden',
                       },
                     ]}
                   >
                     <Image
-                      source={{ uri: 'https://i.imgur.com/7XJZ8Zp.png' }}
-                      style={styles.buildingImage}
-                    />
-                  </Animated.View>
-                  
-                  {/* Progress overlay effect */}
-                  {currentSession?.isActive && (
-                    <Animated.View
+                      source={require('@/assets/images/building/Beige single-story house.png')}
                       style={[
-                        styles.progressOverlay,
+                        styles.buildingImage,
                         {
-                          backgroundColor: colors.primary,
-                          height: progressAnim.interpolate({
-                            inputRange: [0, 1],
-                            outputRange: [0, 160],
-                          }),
-                        },
+                          position: 'absolute',
+                          bottom: 0,
+                          opacity: buildingState === 'completed' ? 1 :
+                                  currentSession?.isActive ? 0.9 : 1,
+                        }
                       ]}
                     />
+                  </Animated.View>
+
+                  {/* Foundation indicator when building is collapsed */}
+                  {buildingState === 'foundation' && (
+                    <View style={styles.foundationIndicator}>
+                      <View style={styles.foundationBase} />
+                    </View>
                   )}
                 </Animated.View>
               </View>
