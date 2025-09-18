@@ -76,9 +76,21 @@ export const USE_REMOTE_ASSETS = false; // Set to true to use GitHub URLs, false
 
 // Helper function to get the appropriate image source
 export const getBuildingImageSource = (towerType: TowerType, useRemote: boolean = USE_REMOTE_ASSETS) => {
+  // Validate towerType exists in our assets
+  if (!towerType || !BUILDING_ASSETS[towerType]) {
+    console.warn(`Invalid tower type: ${towerType}, falling back to 'personal'`);
+    const fallbackAsset = BUILDING_ASSETS['personal'];
+    return useRemote ? { uri: fallbackAsset.url } : fallbackAsset.localPath;
+  }
+
   const asset = getBuildingAsset(towerType);
 
   if (useRemote) {
+    // Ensure URL is not empty
+    if (!asset.url || asset.url.trim() === '') {
+      console.warn(`Empty URL for tower type: ${towerType}, using local asset`);
+      return asset.localPath;
+    }
     return { uri: asset.url };
   } else {
     return asset.localPath;

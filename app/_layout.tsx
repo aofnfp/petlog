@@ -1,5 +1,6 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Drawer } from "expo-router/drawer";
+import CustomDrawerContent from "@/components/CustomDrawerContent";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { View, StatusBar, StyleSheet } from "react-native";
@@ -21,6 +22,7 @@ const styles = StyleSheet.create({
 function RootLayoutNav({ colors }: { colors: any }) {
   return (
     <Drawer
+      drawerContent={() => <CustomDrawerContent />}
       screenOptions={{
         headerShown: false,
         drawerType: "slide",

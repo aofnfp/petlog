@@ -3,7 +3,6 @@ import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Menu } from "lucide-react-native";
 import { colors } from "@/constants/colors";
-import { DrawerActions } from "@react-navigation/native";
 import { useNavigation } from "expo-router";
 
 interface HamburgerHeaderProps {
@@ -15,7 +14,17 @@ export default function HamburgerHeader({ title }: HamburgerHeaderProps) {
   
   const handleOpenDrawer = () => {
     try {
-      navigation.dispatch(DrawerActions.openDrawer());
+      // For Expo Router with drawer, we can use the navigation dispatch
+      if (navigation && 'dispatch' in navigation) {
+        // Import DrawerActions dynamically to avoid conflicts
+        import('@react-navigation/native').then(({ DrawerActions }) => {
+          navigation.dispatch(DrawerActions.openDrawer());
+        }).catch(() => {
+          console.log('DrawerActions not available');
+        });
+      } else {
+        console.log('Drawer navigation not available');
+      }
     } catch (error) {
       console.log('Drawer navigation not available', error);
     }

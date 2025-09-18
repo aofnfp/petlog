@@ -1,6 +1,5 @@
 import React from "react";
-import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { DrawerContentScrollView } from "@react-navigation/drawer";
+import { View, Text, TouchableOpacity, StyleSheet, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { 
   Building2, 
@@ -16,7 +15,7 @@ import {
   Circle
 } from "lucide-react-native";
 import { useTheme } from "@/store/theme-context";
-import type { DrawerContentComponentProps } from "@react-navigation/drawer";
+import { router, usePathname } from "expo-router";
 
 interface DrawerItem {
   label: string;
@@ -39,47 +38,30 @@ const ITEMS: DrawerItem[] = [
   { label: "Settings", icon: (color) => <Settings size={18} color={color} strokeWidth={1.5} />, route: "(tabs)", tabName: "settings" },
 ];
 
-export default function CustomDrawerContent({ navigation, state }: DrawerContentComponentProps) {
-  const activeRoute = state.routeNames[state.index];
+export default function CustomDrawerContent() {
   const { colors } = useTheme();
-
-  // Get the active tab within (tabs) route if applicable
-  const getActiveTab = () => {
-    if (activeRoute === '(tabs)') {
-      const tabsRoute = state.routes.find(r => r.name === '(tabs)');
-      if (tabsRoute && tabsRoute.state && tabsRoute.state.index !== undefined) {
-        const tabRouteNames = tabsRoute.state.routeNames;
-        const activeTabIndex = tabsRoute.state.index;
-        if (tabRouteNames && tabRouteNames[activeTabIndex]) {
-          return tabRouteNames[activeTabIndex];
-        }
-      }
-    }
-    return null;
-  };
-
-  const activeTab = getActiveTab();
+  const pathname = usePathname();
 
   return (
     <SafeAreaView edges={["top", "bottom"]} style={styles.safeArea}>
-      <DrawerContentScrollView
+      <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
       >
         {/* Items */}
         <View style={styles.itemsContainer}>
           {ITEMS.map((item) => {
-            // Check if this item is active
+            // Check if this item is active based on pathname
             let isActive = false;
-            if (item.route === '(tabs)' && item.tabName) {
+            if (item.tabName) {
               // For tab items, check if the specific tab is active
-              isActive = activeRoute === '(tabs)' && activeTab === item.tabName;
-            } else if (item.route === '(tabs)' && !item.tabName) {
+              isActive = pathname.includes(`/${item.tabName}`) || (item.tabName === 'index' && pathname === '/');
+            } else if (item.route === '(tabs)') {
               // For default tab (City Builder)
-              isActive = activeRoute === '(tabs)' && (!activeTab || activeTab === 'index');
+              isActive = pathname === '/' || pathname === '/index';
             } else {
               // For non-tab routes
-              isActive = activeRoute === item.route;
+              isActive = pathname.includes(`/${item.route}`);
             }
             const color = isActive ? colors.primary : colors.textSecondary;
             return (
@@ -88,12 +70,12 @@ export default function CustomDrawerContent({ navigation, state }: DrawerContent
                 onPress={() => {
                   if (item.tabName) {
                     // Navigate to specific tab within (tabs) route
-                    navigation.navigate('(tabs)', { screen: item.tabName });
+                    router.push(`/(tabs)/${item.tabName}`);
                   } else if (item.route === '(tabs)') {
                     // Navigate to the default tab (index)
-                    navigation.navigate('(tabs)');
+                    router.push('/');
                   } else {
-                    navigation.navigate(item.route as any);
+                    router.push(`/${item.route}`);
                   }
                 }}
                 activeOpacity={0.8}
@@ -128,7 +110,7 @@ export default function CustomDrawerContent({ navigation, state }: DrawerContent
             );
           })}
         </View>
-      </DrawerContentScrollView>
+      </ScrollView>
 
       {/* Footer brand */}
       <View style={[styles.footer, { borderTopColor: colors.outline }]}>

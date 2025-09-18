@@ -2,14 +2,10 @@ import React from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import HamburgerHeader from "@/components/HamburgerHeader";
 import { colors } from "@/constants/colors";
-import { useNavigation } from "@react-navigation/native";
-import type { DrawerNavigationProp } from "@react-navigation/drawer";
-
 export default function TimelineScreen() {
-  const navigation = useNavigation<DrawerNavigationProp<any>>();
   return (
     <View style={styles.container}>
-      <HamburgerHeader title="Timeline" navigation={navigation} />
+      <HamburgerHeader title="Timeline" />
       <ScrollView style={styles.content}>
         <Text style={styles.title}>Your Focus Timeline</Text>
         <Text style={styles.subtitle}>Track your progress over time</Text>
