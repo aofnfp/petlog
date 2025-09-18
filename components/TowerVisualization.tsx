@@ -87,11 +87,7 @@ export default function TowerVisualization({ tower, isActive, progress, towerTyp
             <Text style={styles.fallbackLabel}>{buildingType}</Text>
           </View>
         )}
-        
-        {/* Tap indicator */}
-        <View style={styles.tapIndicator}>
-          <Text style={styles.tapText}>Tap to change</Text>
-        </View>
+
       </TouchableOpacity>
         
         {/* Construction indicator overlay when active */}
@@ -258,18 +254,5 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textTransform: 'capitalize',
   },
-  tapIndicator: {
-    position: 'absolute',
-    bottom: -5,
-    backgroundColor: 'rgba(46, 134, 171, 0.9)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
-    opacity: 0.8,
-  },
-  tapText: {
-    color: '#FFFFFF',
-    fontSize: 10,
-    fontWeight: '500',
-  },
+
 });
