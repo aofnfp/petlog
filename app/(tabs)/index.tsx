@@ -10,13 +10,14 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Menu, Briefcase, Heart, BookOpen, Palette, Users, Sparkles, X, Search, Slash, Play } from 'lucide-react-native';
+import { Menu, Briefcase, Heart, BookOpen, Palette, Users, Sparkles, X, Search, Slash, Play, Building2, Trophy, Clock3, Tag, Award, ShoppingBag, Newspaper, Settings } from 'lucide-react-native';
 import { useTheme } from '@/store/theme-context';
 
 import { useFocusFlow } from '@/store/focusflow-context';
 import { useRouter } from 'expo-router';
+import { DrawerActions } from '@react-navigation/native';
+import { useNavigation } from '@react-navigation/native';
 import TowerVisualization from '@/components/TowerVisualization';
-import CustomDrawerContent from '@/components/CustomDrawerContent';
 import { logAllBuildingUrls } from '@/constants/buildings';
 import { TowerType } from '@/types';
 
@@ -31,6 +32,7 @@ const TOWER_TABS = [
 
 export default function HomeScreen() {
   const router = useRouter();
+  const navigation = useNavigation();
   const { colors } = useTheme();
   const {
     currentSession,
@@ -47,7 +49,7 @@ export default function HomeScreen() {
   const [selectedDuration, setSelectedDuration] = useState(25); // minutes
   const [showTagModal, setShowTagModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [showNavigationModal, setShowNavigationModal] = useState(false);
+
   const [motivationalIndex, setMotivationalIndex] = useState(0);
 
   const motivationalMessages = [
@@ -270,7 +272,7 @@ export default function HomeScreen() {
     },
     safeArea: {
       flex: 1,
-      backgroundColor: colors.primary,
+      backgroundColor: colors.background,
     },
     gradientBackground: {
       position: 'absolute',
@@ -279,22 +281,31 @@ export default function HomeScreen() {
       top: 0,
       height: 300,
     },
-    header: {
-      height: 56,
-      flexDirection: 'row',
+    sidebar: {
+      position: 'absolute',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      width: 60,
+      backgroundColor: 'rgba(0, 0, 0, 0.1)',
+      paddingTop: 60,
+      paddingBottom: 20,
       alignItems: 'center',
-      justifyContent: 'space-between',
-      paddingHorizontal: 16,
-      backgroundColor: colors.primary,
+      zIndex: 10,
     },
-    menuButton: {
-      width: 40,
-      height: 40,
+    sidebarItem: {
+      width: 44,
+      height: 44,
       justifyContent: 'center',
       alignItems: 'center',
+      marginVertical: 8,
+      borderRadius: 12,
     },
     energyBadge: {
-      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+      position: 'absolute',
+      top: 60,
+      right: 20,
+      backgroundColor: 'rgba(255, 255, 255, 0.15)',
       paddingHorizontal: 16,
       paddingVertical: 8,
       borderRadius: 20,
@@ -307,7 +318,8 @@ export default function HomeScreen() {
       shadowRadius: 4,
       elevation: 2,
       borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.3)',
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      zIndex: 10,
     },
     energyText: {
       color: '#FFFFFF',
@@ -320,32 +332,24 @@ export default function HomeScreen() {
       backgroundColor: colors.background,
     },
     contentContainer: {
-      paddingHorizontal: 20,
+      paddingLeft: 80,
+      paddingRight: 20,
       paddingTop: space.lg,
       paddingBottom: space.xl,
+      alignItems: 'center',
     },
     motivationalText: {
-      fontSize: 20,
+      fontSize: 28,
       fontWeight: '700' as const,
       color: colors.textPrimary,
       textAlign: 'center',
-      marginTop: space.lg,
-      marginBottom: space.xl,
+      marginTop: 40,
+      marginBottom: 40,
       letterSpacing: 0.5,
     },
     heroCard: {
-      backgroundColor: colors.surface,
-      borderRadius: 24,
-      padding: 24,
-      marginHorizontal: 20,
-      marginBottom: space.lg,
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.12,
-      shadowRadius: 24,
-      elevation: 8,
-      borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      alignItems: 'center',
+      marginBottom: 40,
     },
     progressRing: {
       alignItems: 'center',
@@ -353,46 +357,46 @@ export default function HomeScreen() {
       marginBottom: 20,
     },
     progressRingOuter: {
-      width: 280,
-      height: 280,
-      borderRadius: 140,
-      borderWidth: 8,
-      borderColor: 'rgba(46, 134, 171, 0.1)',
+      width: 320,
+      height: 320,
+      borderRadius: 160,
+      borderWidth: 6,
+      borderColor: 'rgba(0, 191, 165, 0.2)',
       alignItems: 'center',
       justifyContent: 'center',
       position: 'relative',
     },
     progressRingInner: {
       position: 'absolute',
-      width: 280,
-      height: 280,
-      borderRadius: 140,
-      borderWidth: 8,
+      width: 320,
+      height: 320,
+      borderRadius: 160,
+      borderWidth: 6,
       borderColor: 'transparent',
       borderTopColor: colors.primary,
       transform: [{ rotate: '-90deg' }],
     },
     buildingPlot: {
       position: 'absolute',
-      bottom: 20,
-      width: 200,
-      height: 40,
-      backgroundColor: '#8FBC8F',
-      borderRadius: 20,
+      bottom: 30,
+      width: 180,
+      height: 30,
+      backgroundColor: '#00BFA5',
+      borderRadius: 15,
       shadowColor: '#000',
-      shadowOffset: { width: 0, height: 2 },
-      shadowOpacity: 0.1,
-      shadowRadius: 4,
-      elevation: 2,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
     },
     plotGrass: {
       position: 'absolute',
-      top: -5,
-      left: 10,
-      right: 10,
-      height: 10,
-      backgroundColor: '#9ACD32',
-      borderRadius: 5,
+      top: -8,
+      left: 15,
+      right: 15,
+      height: 16,
+      backgroundColor: '#26A69A',
+      borderRadius: 8,
     },
     buildingContainer: {
       alignItems: 'center',
@@ -478,31 +482,30 @@ export default function HomeScreen() {
       fontWeight: '600' as const,
     },
     timerDisplay: {
-      fontSize: 44,
+      fontSize: 48,
       fontWeight: '800' as const,
       color: colors.textPrimary,
       textAlign: 'center',
-      marginBottom: space.md,
-      letterSpacing: 1,
+      marginBottom: 30,
+      letterSpacing: 2,
     },
     durationContainer: {
       flexDirection: 'row',
-      justifyContent: 'space-between',
-      marginHorizontal: 12,
-      marginBottom: space.lg,
-      gap: 10,
+      justifyContent: 'center',
+      marginBottom: 40,
+      gap: 12,
     },
     durationPill: {
-      paddingHorizontal: 16,
-      paddingVertical: 8,
-      borderRadius: 999,
-      borderWidth: 1,
-      borderColor: colors.outline,
-      backgroundColor: colors.surface,
+      paddingHorizontal: 20,
+      paddingVertical: 12,
+      borderRadius: 25,
+      borderWidth: 2,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
+      backgroundColor: 'rgba(255, 255, 255, 0.1)',
     },
     durationPillActive: {
-      backgroundColor: colors.accent,
-      borderColor: colors.accent,
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
     },
     durationText: {
       fontSize: 14,
@@ -516,22 +519,21 @@ export default function HomeScreen() {
       alignItems: 'center',
     },
     mainActionButton: {
-      paddingHorizontal: 40,
-      height: 60,
+      paddingHorizontal: 60,
+      height: 70,
       backgroundColor: colors.primary,
-      borderRadius: 16,
+      borderRadius: 35,
       justifyContent: 'center',
       alignItems: 'center',
       shadowColor: colors.primary,
       shadowOffset: { width: 0, height: 8 },
-      shadowOpacity: 0.3,
-      shadowRadius: 16,
-      elevation: 8,
-      marginHorizontal: 20,
+      shadowOpacity: 0.4,
+      shadowRadius: 20,
+      elevation: 12,
       marginBottom: space.safeBottom,
       alignSelf: 'center',
-      borderWidth: 2,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      borderWidth: 3,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     glowingButton: {
       shadowColor: colors.primary,
@@ -551,9 +553,9 @@ export default function HomeScreen() {
     },
     mainButtonText: {
       color: '#FFFFFF',
-      fontSize: 20,
+      fontSize: 22,
       fontWeight: '800' as const,
-      letterSpacing: 0.5,
+      letterSpacing: 1,
     },
     tagChip: {
       flexDirection: 'row',
@@ -813,56 +815,51 @@ export default function HomeScreen() {
       borderRadius: 14,
       opacity: 0.5,
     },
-    navigationModalOverlay: {
-      flex: 1,
-      backgroundColor: 'rgba(0, 0, 0, 0.5)',
-      justifyContent: 'flex-start',
-    },
-    navigationModalContent: {
-      backgroundColor: colors.surface,
-      height: '100%',
-      width: '85%',
-      maxWidth: 320,
-    },
-    navigationHeader: {
-      flexDirection: 'row',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-      padding: 16,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.outline,
-    },
-    navigationTitle: {
-      fontSize: 18,
-      fontWeight: '700' as const,
-      color: colors.textPrimary,
-    },
+
 
   }), [colors, space.lg, space.md, space.safeBottom, space.xl]);
 
   return (
     <View style={styles.container}>
       <SafeAreaView style={styles.safeArea} edges={['top']}>
-        {/* Clean Header */}
-        <View style={styles.header}>
+        {/* Sidebar Navigation */}
+        <View style={styles.sidebar}>
           <TouchableOpacity
-            onPress={() => {
-              console.log('Menu pressed - opening navigation modal');
-              setShowNavigationModal(true);
-            }}
-            style={styles.menuButton}
+            onPress={() => navigation.dispatch(DrawerActions.openDrawer())}
+            style={styles.sidebarItem}
             accessibilityLabel="Open menu"
           >
-            <Menu size={22} color="#FFFFFF" strokeWidth={2} />
+            <Menu size={20} color="rgba(255, 255, 255, 0.7)" strokeWidth={2} />
           </TouchableOpacity>
           
-          <TouchableOpacity 
-            style={styles.energyBadge}
-            onPress={() => router.push('/(tabs)/donate')}
-          >
-            <Text style={styles.energyText}>{totalEnergy} ⚡</Text>
+          <TouchableOpacity style={styles.sidebarItem}>
+            <Building2 size={20} color="#FFFFFF" strokeWidth={2} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.sidebarItem}>
+            <Trophy size={20} color="rgba(255, 255, 255, 0.7)" strokeWidth={2} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.sidebarItem}>
+            <Clock3 size={20} color="rgba(255, 255, 255, 0.7)" strokeWidth={2} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.sidebarItem}>
+            <Tag size={20} color="rgba(255, 255, 255, 0.7)" strokeWidth={2} />
+          </TouchableOpacity>
+          
+          <TouchableOpacity style={styles.sidebarItem}>
+            <Users size={20} color="rgba(255, 255, 255, 0.7)" strokeWidth={2} />
           </TouchableOpacity>
         </View>
+        
+        {/* Energy Badge */}
+        <TouchableOpacity 
+          style={styles.energyBadge}
+          onPress={() => router.push('/(tabs)/donate')}
+        >
+          <Text style={styles.energyText}>{totalEnergy} ⚡</Text>
+        </TouchableOpacity>
 
         <ScrollView 
           style={styles.content}
@@ -873,9 +870,7 @@ export default function HomeScreen() {
 
           {/* Hero Header */}
           <Text style={styles.motivationalText}>
-            {currentSession?.isActive 
-              ? (currentSession.isPaused ? 'Paused - Keep building!' : 'Construction in progress...')
-              : motivationalMessages[motivationalIndex]}
+            Start building today!
           </Text>
 
           {/* Hero Card with Progress Ring and Building */}
@@ -1149,25 +1144,7 @@ export default function HomeScreen() {
         </View>
       </Modal>
 
-      {/* Navigation Modal */}
-      <Modal
-        visible={showNavigationModal}
-        animationType="slide"
-        transparent={true}
-        onRequestClose={() => setShowNavigationModal(false)}
-      >
-        <View style={styles.navigationModalOverlay}>
-          <View style={styles.navigationModalContent}>
-            <View style={styles.navigationHeader}>
-              <Text style={styles.navigationTitle}>Navigation</Text>
-              <TouchableOpacity onPress={() => setShowNavigationModal(false)}>
-                <X size={24} color={colors.textPrimary} />
-              </TouchableOpacity>
-            </View>
-            <CustomDrawerContent onNavigate={() => setShowNavigationModal(false)} />
-          </View>
-        </View>
-      </Modal>
+
 
     </View>
   );

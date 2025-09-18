@@ -16,6 +16,7 @@ import {
 } from "lucide-react-native";
 import { useTheme } from "@/store/theme-context";
 import { router, usePathname } from "expo-router";
+import { DrawerContentComponentProps } from '@react-navigation/drawer';
 
 interface DrawerItem {
   label: string;
@@ -38,11 +39,12 @@ const ITEMS: DrawerItem[] = [
   { label: "Settings", icon: (color) => <Settings size={18} color={color} strokeWidth={1.5} />, route: "(tabs)", tabName: "settings" },
 ];
 
-interface CustomDrawerContentProps {
+interface CustomDrawerContentProps extends DrawerContentComponentProps {
   onNavigate?: () => void;
 }
 
-export default function CustomDrawerContent({ onNavigate }: CustomDrawerContentProps) {
+export default function CustomDrawerContent(props: CustomDrawerContentProps) {
+  const { onNavigate, navigation } = props;
   const { colors } = useTheme();
   const pathname = usePathname();
 
@@ -81,7 +83,8 @@ export default function CustomDrawerContent({ onNavigate }: CustomDrawerContentP
                   } else {
                     router.push(`/${item.route}`);
                   }
-                  // Close the modal after navigation
+                  // Close the drawer after navigation
+                  navigation?.closeDrawer?.();
                   onNavigate?.();
                 }}
                 activeOpacity={0.8}
@@ -130,6 +133,7 @@ export default function CustomDrawerContent({ onNavigate }: CustomDrawerContentP
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+    backgroundColor: '#004D40',
   },
   scrollContent: {
     paddingVertical: 20,
