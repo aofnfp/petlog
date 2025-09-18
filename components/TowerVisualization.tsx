@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, Image } from 'react-native';
+import { View, StyleSheet, Text, Image, TouchableOpacity } from 'react-native';
 import { Tower, TowerType } from '@/types';
 import { getBuildingImageSource } from '@/constants/buildings';
+import HouseSelectionModal from '@/components/HouseSelectionModal';
+import { useFocusFlow } from '@/store/focusflow-context';
 
 interface TowerVisualizationProps {
   tower: Tower | undefined;
   isActive: boolean;
   progress: number;
-  towerType?: TowerType; // Add towerType to determine which building to show
+  towerType?: TowerType;
 }
 
 export default function TowerVisualization({ tower, isActive, progress, towerType }: TowerVisualizationProps) {
   const [imageError, setImageError] = useState<boolean>(false);
+  const [showHouseModal, setShowHouseModal] = useState<boolean>(false);
+  const { selectedBuildingType, setSelectedBuildingType } = useFocusFlow();
   
   if (!tower) {
     return (
@@ -28,9 +32,17 @@ export default function TowerVisualization({ tower, isActive, progress, towerTyp
   const scale = Math.min(1 + (tower.level - 1) * 0.05, 2); // Max scale of 2x
   const imageSize = 120 * scale;
 
-  // Determine which building to show - use tower type or fallback to 'personal'
-  const buildingType = towerType || tower.type || 'personal';
+  // Determine which building to show - use selected building type, tower type, or fallback
+  const buildingType = selectedBuildingType || towerType || tower?.type || 'personal';
   const buildingImageSource = getBuildingImageSource(buildingType);
+  
+  const handleBuildingPress = () => {
+    setShowHouseModal(true);
+  };
+  
+  const handleSelectBuilding = (newBuildingType: TowerType) => {
+    setSelectedBuildingType(newBuildingType);
+  };
   
   // Validate image source
   const hasValidImageSource = buildingImageSource && 
@@ -39,8 +51,12 @@ export default function TowerVisualization({ tower, isActive, progress, towerTyp
 
   return (
     <View style={styles.container}>
-      {/* Tower/Building image */}
-      <View style={styles.houseContainer}>
+      {/* Tower/Building image - Clickable */}
+      <TouchableOpacity 
+        style={styles.houseContainer}
+        onPress={handleBuildingPress}
+        activeOpacity={0.8}
+      >
         {hasValidImageSource && !imageError ? (
           <Image
             source={buildingImageSource}
@@ -72,6 +88,12 @@ export default function TowerVisualization({ tower, isActive, progress, towerTyp
           </View>
         )}
         
+        {/* Tap indicator */}
+        <View style={styles.tapIndicator}>
+          <Text style={styles.tapText}>Tap to change</Text>
+        </View>
+      </TouchableOpacity>
+        
         {/* Construction indicator overlay when active */}
         {isActive && (
           <View style={styles.constructionOverlay}>
@@ -87,7 +109,14 @@ export default function TowerVisualization({ tower, isActive, progress, towerTyp
             <View style={[styles.activeProgressFill, { width: `${progress}%` }]} />
           </View>
         )}
-      </View>
+      
+      {/* House Selection Modal */}
+      <HouseSelectionModal
+        visible={showHouseModal}
+        onClose={() => setShowHouseModal(false)}
+        onSelectHouse={handleSelectBuilding}
+        currentSelection={selectedBuildingType}
+      />
       
       {/* Level indicator */}
       <View style={styles.levelBadge}>
@@ -228,5 +257,19 @@ const styles = StyleSheet.create({
     color: '#2E86AB',
     fontWeight: '600',
     textTransform: 'capitalize',
+  },
+  tapIndicator: {
+    position: 'absolute',
+    bottom: -5,
+    backgroundColor: 'rgba(46, 134, 171, 0.9)',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 12,
+    opacity: 0.8,
+  },
+  tapText: {
+    color: '#FFFFFF',
+    fontSize: 10,
+    fontWeight: '500',
   },
 });

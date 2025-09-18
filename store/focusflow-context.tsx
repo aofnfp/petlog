@@ -32,6 +32,7 @@ export const [FocusFlowProvider, useFocusFlow] = createContextHook(() => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTower, setSelectedTower] = useState<TowerType>('career');
   const [selectedTagId, setSelectedTagId] = useState<string | null>(null);
+  const [selectedBuildingType, setSelectedBuildingType] = useState<TowerType>('personal');
   
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
@@ -484,6 +485,8 @@ export const [FocusFlowProvider, useFocusFlow] = createContextHook(() => {
     setSelectedTower,
     selectedTagId,
     selectTag,
+    selectedBuildingType,
+    setSelectedBuildingType,
     totalEnergy: userProfile?.totalEnergy || 0,
     startSession,
     pauseSession,
