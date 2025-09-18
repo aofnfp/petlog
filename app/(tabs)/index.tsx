@@ -10,7 +10,7 @@ import {
   TextInput,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Menu, Briefcase, Heart, BookOpen, Palette, Users, Sparkles, X, Search, Slash } from 'lucide-react-native';
+import { Menu, Briefcase, Heart, BookOpen, Palette, Users, Sparkles, X, Search, Slash, Play } from 'lucide-react-native';
 import { useTheme } from '@/store/theme-context';
 
 import { useFocusFlow } from '@/store/focusflow-context';
@@ -48,6 +48,15 @@ export default function HomeScreen() {
   const [showTagModal, setShowTagModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [showNavigationModal, setShowNavigationModal] = useState(false);
+  const [motivationalIndex, setMotivationalIndex] = useState(0);
+
+  const motivationalMessages = [
+    'Lay the foundation of success 🧱',
+    'Focus fuels your tower 🚀',
+    'Stay sharp, build higher 🏗️',
+    'Every minute counts ⏰',
+    'Transform focus into progress 💪'
+  ];
 
 
 
@@ -55,6 +64,7 @@ export default function HomeScreen() {
   const buildingHeightAnim = useRef(new Animated.Value(160)).current; // Full height when complete
   const [showGiveUpModal, setShowGiveUpModal] = useState(false);
   const [buildingState, setBuildingState] = useState<'preview' | 'foundation' | 'constructing' | 'completed'>('preview');
+  const glowAnim = useRef(new Animated.Value(0)).current;
 
   const timeRemaining = currentSession?.remaining || null;
   const sessionProgress = currentSession?.isActive
@@ -65,6 +75,38 @@ export default function HomeScreen() {
   useEffect(() => {
     logAllBuildingUrls();
   }, []);
+
+  // Rotate motivational messages
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setMotivationalIndex((prev) => (prev + 1) % motivationalMessages.length);
+    }, 4000);
+    return () => clearInterval(interval);
+  }, [motivationalMessages.length]);
+
+  // Animate button glow when not active
+  useEffect(() => {
+    if (!currentSession?.isActive) {
+      const glowAnimation = Animated.loop(
+        Animated.sequence([
+          Animated.timing(glowAnim, {
+            toValue: 1,
+            duration: 2000,
+            useNativeDriver: false,
+          }),
+          Animated.timing(glowAnim, {
+            toValue: 0,
+            duration: 2000,
+            useNativeDriver: false,
+          }),
+        ])
+      );
+      glowAnimation.start();
+      return () => glowAnimation.stop();
+    } else {
+      glowAnim.setValue(0);
+    }
+  }, [currentSession?.isActive, glowAnim]);
 
   // Set building state based on session status
   useEffect(() => {
@@ -230,6 +272,13 @@ export default function HomeScreen() {
       flex: 1,
       backgroundColor: colors.primary,
     },
+    gradientBackground: {
+      position: 'absolute',
+      left: 0,
+      right: 0,
+      top: 0,
+      height: 300,
+    },
     header: {
       height: 56,
       flexDirection: 'row',
@@ -245,15 +294,26 @@ export default function HomeScreen() {
       alignItems: 'center',
     },
     energyBadge: {
-      backgroundColor: 'rgba(255, 255, 255, 0.18)',
-      paddingHorizontal: 12,
-      paddingVertical: 6,
-      borderRadius: 16,
+      backgroundColor: 'rgba(255, 255, 255, 0.25)',
+      paddingHorizontal: 16,
+      paddingVertical: 8,
+      borderRadius: 20,
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 6,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.3)',
     },
     energyText: {
       color: '#FFFFFF',
-      fontSize: 14,
-      fontWeight: '700' as const,
+      fontSize: 16,
+      fontWeight: '800' as const,
+      letterSpacing: 0.5,
     },
     content: {
       flex: 1,
@@ -265,46 +325,99 @@ export default function HomeScreen() {
       paddingBottom: space.xl,
     },
     motivationalText: {
-      fontSize: 18,
-      fontWeight: '600' as const,
+      fontSize: 20,
+      fontWeight: '700' as const,
       color: colors.textPrimary,
       textAlign: 'center',
       marginTop: space.lg,
-      marginBottom: space.md,
+      marginBottom: space.xl,
+      letterSpacing: 0.5,
+    },
+    heroCard: {
+      backgroundColor: colors.surface,
+      borderRadius: 24,
+      padding: 24,
+      marginHorizontal: 20,
+      marginBottom: space.lg,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.12,
+      shadowRadius: 24,
+      elevation: 8,
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    progressRing: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+    },
+    progressRingOuter: {
+      width: 280,
+      height: 280,
+      borderRadius: 140,
+      borderWidth: 8,
+      borderColor: 'rgba(46, 134, 171, 0.1)',
+      alignItems: 'center',
+      justifyContent: 'center',
+      position: 'relative',
+    },
+    progressRingInner: {
+      position: 'absolute',
+      width: 280,
+      height: 280,
+      borderRadius: 140,
+      borderWidth: 8,
+      borderColor: 'transparent',
+      borderTopColor: colors.primary,
+      transform: [{ rotate: '-90deg' }],
+    },
+    buildingPlot: {
+      position: 'absolute',
+      bottom: 20,
+      width: 200,
+      height: 40,
+      backgroundColor: '#8FBC8F',
+      borderRadius: 20,
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.1,
+      shadowRadius: 4,
+      elevation: 2,
+    },
+    plotGrass: {
+      position: 'absolute',
+      top: -5,
+      left: 10,
+      right: 10,
+      height: 10,
+      backgroundColor: '#9ACD32',
+      borderRadius: 5,
     },
     buildingContainer: {
       alignItems: 'center',
     },
-    buildingCard: {
-      width: '100%',
-      maxWidth: 320,
-      backgroundColor: colors.surface,
-      borderRadius: 20,
-      padding: 20,
-      alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.06,
-      shadowRadius: 8,
-      elevation: 1,
-      position: 'relative' as const,
-      marginBottom: space.lg,
-      borderWidth: 1,
-      borderColor: colors.outline,
-    },
     levelBadge: {
       position: 'absolute' as const,
-      top: 8,
-      right: 8,
+      top: -10,
+      right: -10,
       backgroundColor: colors.primary,
-      paddingHorizontal: 10,
-      paddingVertical: 4,
-      borderRadius: 12,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 16,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+      borderWidth: 2,
+      borderColor: colors.surface,
     },
     levelText: {
       color: '#FFFFFF',
-      fontSize: 12,
-      fontWeight: '700' as const,
+      fontSize: 14,
+      fontWeight: '800' as const,
+      letterSpacing: 0.5,
     },
     progressRingContainer: {
       position: 'relative' as const,
@@ -403,24 +516,33 @@ export default function HomeScreen() {
       alignItems: 'center',
     },
     mainActionButton: {
-      paddingHorizontal: 32,
-      height: 52,
+      paddingHorizontal: 40,
+      height: 60,
       backgroundColor: colors.primary,
-      borderRadius: 12,
+      borderRadius: 16,
       justifyContent: 'center',
       alignItems: 'center',
-      shadowColor: '#000',
-      shadowOffset: { width: 0, height: 4 },
-      shadowOpacity: 0.1,
-      shadowRadius: 8,
-      elevation: 2,
-      marginHorizontal: 8,
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.3,
+      shadowRadius: 16,
+      elevation: 8,
+      marginHorizontal: 20,
       marginBottom: space.safeBottom,
-      paddingVertical: 14,
       alignSelf: 'center',
+      borderWidth: 2,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    glowingButton: {
+      shadowColor: colors.primary,
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.6,
+      shadowRadius: 20,
+      elevation: 12,
     },
     giveUpButton: {
       backgroundColor: colors.danger,
+      shadowColor: colors.danger,
     },
     buttonContent: {
       flexDirection: 'row',
@@ -429,19 +551,27 @@ export default function HomeScreen() {
     },
     mainButtonText: {
       color: '#FFFFFF',
-      fontSize: 18,
-      fontWeight: '700' as const,
+      fontSize: 20,
+      fontWeight: '800' as const,
+      letterSpacing: 0.5,
     },
     tagChip: {
       flexDirection: 'row',
       alignItems: 'center',
-      gap: 6,
-      backgroundColor: '#EAF4FA',
-      paddingHorizontal: 14,
-      paddingVertical: 8,
+      gap: 8,
+      backgroundColor: 'rgba(46, 134, 171, 0.1)',
+      paddingHorizontal: 16,
+      paddingVertical: 10,
       borderRadius: 999,
-      marginTop: 16,
+      marginTop: 20,
       alignSelf: 'center',
+      borderWidth: 1,
+      borderColor: 'rgba(46, 134, 171, 0.2)',
+      shadowColor: '#000',
+      shadowOffset: { width: 0, height: 2 },
+      shadowOpacity: 0.05,
+      shadowRadius: 4,
+      elevation: 2,
     },
     tagText: {
       color: colors.primary,
@@ -745,42 +875,77 @@ export default function HomeScreen() {
           <Text style={styles.motivationalText}>
             {currentSession?.isActive 
               ? (currentSession.isPaused ? 'Paused - Keep building!' : 'Construction in progress...')
-              : 'Start building today!'}
+              : motivationalMessages[motivationalIndex]}
           </Text>
 
-          {/* Building Visualization - Using TowerVisualization component */}
-          <View style={styles.buildingContainer}>
-            <TowerVisualization
-              tower={towers?.[selectedTab as TowerType] || {
-                type: selectedTab as TowerType,
-                level: 1,
-                energyInvested: 0,
-                currentGoal: '',
-                progress: sessionProgress * 100,
-              }}
-              isActive={currentSession?.isActive || false}
-              progress={sessionProgress * 100}
-              towerType={selectedTab as TowerType}
-              buildingState={buildingState}
-              buildingHeightAnim={buildingHeightAnim}
-            />
+          {/* Hero Card with Progress Ring and Building */}
+          <View style={styles.heroCard}>
+            {/* Level Badge */}
+            <View style={styles.levelBadge}>
+              <Text style={styles.levelText}>
+                Lv. {towers?.[selectedTab as TowerType]?.level || 1}
+              </Text>
+            </View>
+
+            {/* Progress Ring Container */}
+            <View style={styles.progressRing}>
+              <View style={styles.progressRingOuter}>
+                {/* Animated Progress Ring */}
+                <Animated.View 
+                  style={[
+                    styles.progressRingInner,
+                    {
+                      transform: [
+                        { rotate: '-90deg' },
+                        {
+                          rotate: progressAnim.interpolate({
+                            inputRange: [0, 1],
+                            outputRange: ['0deg', '360deg'],
+                          }),
+                        },
+                      ],
+                    },
+                  ]}
+                />
+                
+                {/* Building Plot */}
+                <View style={styles.buildingPlot}>
+                  <View style={styles.plotGrass} />
+                </View>
+                
+                {/* Building Visualization */}
+                <TowerVisualization
+                  tower={towers?.[selectedTab as TowerType] || {
+                    type: selectedTab as TowerType,
+                    level: 1,
+                    energyInvested: 0,
+                    currentGoal: '',
+                    progress: sessionProgress * 100,
+                  }}
+                  isActive={currentSession?.isActive || false}
+                  progress={sessionProgress * 100}
+                  towerType={selectedTab as TowerType}
+                  buildingState={buildingState}
+                  buildingHeightAnim={buildingHeightAnim}
+                />
+              </View>
+            </View>
             
+            {/* Tag Chip */}
             <TouchableOpacity 
-              style={[styles.intentionBanner, currentSession?.isActive && styles.intentionBannerDisabled]}
+              style={[styles.tagChip, currentSession?.isActive && { opacity: 0.6 }]}
               onPress={() => !currentSession?.isActive && setShowTagModal(true)}
               activeOpacity={currentSession?.isActive ? 1 : 0.8}
               disabled={currentSession?.isActive}
             >
-              <View style={styles.intentionContent}>
-                {selectedTagId && tags ? (
-                  <View style={[styles.tagDotSmall, { backgroundColor: tags.find(t => t.id === selectedTagId)?.color || colors.primary }]} />
-                ) : (
-                  <View style={[styles.tagDotSmall, { backgroundColor: colors.primary }]} />
-                )}
-                <Text style={styles.intentionText}>
-                  {getSelectedTagName() || `${activeTab?.label} Tower`}
-                </Text>
-              </View>
+              {selectedTagId && tags ? (
+                <View style={[styles.tagDotSmall, { backgroundColor: tags.find(t => t.id === selectedTagId)?.color || colors.primary }]} />
+              ) : (
+                <View style={[styles.tagDotSmall, { backgroundColor: colors.primary }]} />
+              )}
+              <Text style={styles.tagText}>
+                {getSelectedTagName() || `${activeTab?.label} Tower`}
+              </Text>
             </TouchableOpacity>
           </View>
 
@@ -798,7 +963,7 @@ export default function HomeScreen() {
                     selectedDuration === duration && styles.durationPillActive
                   ]}
                   onPress={() => {
-                    if (duration && typeof duration === 'number' && duration > 0 && duration <= 180) {
+                    if (typeof duration === 'number' && duration > 0 && duration <= 180) {
                       setSelectedDuration(duration);
                     }
                   }}
@@ -816,27 +981,44 @@ export default function HomeScreen() {
 
           {/* Single Main Control Button */}
           <View style={styles.controlsContainer}>
-            <TouchableOpacity
+            <Animated.View
               style={[
-                styles.mainActionButton,
-                currentSession?.isActive && styles.giveUpButton
+                !currentSession?.isActive && {
+                  shadowOpacity: glowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0.3, 0.8],
+                  }),
+                  shadowRadius: glowAnim.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [16, 32],
+                  }),
+                },
               ]}
-              onPress={handleStartBuilding}
-              activeOpacity={0.9}
             >
-              <View style={styles.buttonContent}>
-                {currentSession?.isActive ? (
-                  <>
-                    <Slash size={20} color="#FFFFFF" strokeWidth={2.5} />
-                    <Text style={styles.mainButtonText}>Give Up</Text>
-                  </>
-                ) : (
-                  <Text style={styles.mainButtonText}>Build</Text>
-                )}
-              </View>
-            </TouchableOpacity>
-
-
+              <TouchableOpacity
+                style={[
+                  styles.mainActionButton,
+                  currentSession?.isActive && styles.giveUpButton,
+                  !currentSession?.isActive && styles.glowingButton,
+                ]}
+                onPress={handleStartBuilding}
+                activeOpacity={0.9}
+              >
+                <View style={styles.buttonContent}>
+                  {currentSession?.isActive ? (
+                    <>
+                      <Slash size={24} color="#FFFFFF" strokeWidth={2.5} />
+                      <Text style={styles.mainButtonText}>Give Up</Text>
+                    </>
+                  ) : (
+                    <>
+                      <Play size={24} color="#FFFFFF" strokeWidth={2.5} fill="#FFFFFF" />
+                      <Text style={styles.mainButtonText}>Start Building</Text>
+                    </>
+                  )}
+                </View>
+              </TouchableOpacity>
+            </Animated.View>
           </View>
         </ScrollView>
       </SafeAreaView>
