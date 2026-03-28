@@ -20,6 +20,7 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
         <Stack.Screen name="recipe/[id]" options={{ presentation: 'card' }} />
+        <Stack.Screen name="history" options={{ presentation: 'card' }} />
       </Stack>
     </GestureHandlerRootView>
   );

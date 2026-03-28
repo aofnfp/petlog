@@ -8,6 +8,7 @@ import {
   SafeAreaView,
   Alert,
 } from 'react-native';
+import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { useUserStore } from '@/store/user-store';
@@ -24,6 +25,7 @@ const DIET_LABELS: Record<string, string> = {
 };
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { dietType, allergies, calorieTarget, resetProfile } = useUserStore();
   const { deleteAllData } = useMealStore();
 
@@ -72,7 +74,7 @@ export default function SettingsScreen() {
         <Text style={styles.sectionLabel}>APP</Text>
         <View style={styles.settingsGroup}>
           <SettingRow label="Notifications" />
-          <SettingRow label="Plan History" />
+          <SettingRow label="Plan History" onPress={() => router.push('/history')} />
           <SettingRow label="Export My Data" isLast />
         </View>
 
@@ -93,9 +95,9 @@ export default function SettingsScreen() {
   );
 }
 
-function SettingRow({ label, value, isLast }: { label: string; value?: string; isLast?: boolean }) {
+function SettingRow({ label, value, isLast, onPress }: { label: string; value?: string; isLast?: boolean; onPress?: () => void }) {
   return (
-    <TouchableOpacity style={[styles.settingRow, !isLast && styles.settingRowBorder]}>
+    <TouchableOpacity style={[styles.settingRow, !isLast && styles.settingRowBorder]} onPress={onPress}>
       <Text style={styles.settingLabel}>{label}</Text>
       <View style={styles.settingRight}>
         {value && <Text style={styles.settingValue}>{value}</Text>}
