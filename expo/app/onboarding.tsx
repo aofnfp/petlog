@@ -4,438 +4,317 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
+  SafeAreaView,
   ScrollView,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
-import { useFocusFlow } from '@/store/focusflow-context';
-import { storage } from '@/lib/storage';
-import { TowerType } from '@/types/index';
-import { colors } from '@/constants/colors';
-import { typography } from '@/constants/typography';
-import { 
-  Briefcase, 
-  Heart, 
-  BookOpen, 
-  Palette, 
-  Users, 
-  User,
-  ChevronRight,
-  Clock,
-  Target,
-  Building2
-} from 'lucide-react-native';
+import { Colors } from '@/constants/colors';
+import { useUserStore } from '@/store/user-store';
+import { useMealStore } from '@/store/meal-store';
+import { DietType, Allergen } from '@/types';
+import { Ionicons } from '@expo/vector-icons';
 
-
-
-const TOWER_OPTIONS = [
-  { id: 'career' as TowerType, icon: Briefcase, title: 'Career', description: 'Advance your professional goals', color: '#007AFF' },
-  { id: 'health' as TowerType, icon: Heart, title: 'Health', description: 'Build strength and wellness', color: '#34C759' },
-  { id: 'learning' as TowerType, icon: BookOpen, title: 'Learning', description: 'Expand your knowledge', color: '#FF9500' },
-  { id: 'creativity' as TowerType, icon: Palette, title: 'Creativity', description: 'Express your artistic side', color: '#AF52DE' },
-  { id: 'relationships' as TowerType, icon: Users, title: 'Relationships', description: 'Strengthen connections', color: '#FF3B30' },
-  { id: 'personal' as TowerType, icon: User, title: 'Personal', description: 'Develop inner peace', color: '#5AC8FA' },
+const DIET_OPTIONS: { type: DietType; label: string; desc: string }[] = [
+  { type: 'omnivore', label: 'Omnivore', desc: 'Everything — no restrictions' },
+  { type: 'vegetarian', label: 'Vegetarian', desc: 'No meat or fish' },
+  { type: 'vegan', label: 'Vegan', desc: 'Plant-based only' },
+  { type: 'keto', label: 'Keto', desc: 'Low carb, high fat' },
+  { type: 'pescatarian', label: 'Pescatarian', desc: 'Fish and seafood, no meat' },
 ];
 
-const DURATION_OPTIONS = [
-  { duration: 600, label: 'Quick Start', subtitle: '10 minutes' },
-  { duration: 1500, label: 'Power Session', subtitle: '25 minutes' },
-  { duration: 2700, label: 'Deep Work', subtitle: '45 minutes' },
-  { duration: 5400, label: 'Marathon', subtitle: '90 minutes' },
+const ALLERGEN_OPTIONS: { type: Allergen; label: string }[] = [
+  { type: 'nuts', label: 'Nuts' },
+  { type: 'dairy', label: 'Dairy' },
+  { type: 'eggs', label: 'Eggs' },
+  { type: 'shellfish', label: 'Shellfish' },
+  { type: 'soy', label: 'Soy' },
+  { type: 'gluten', label: 'Gluten' },
+  { type: 'fish', label: 'Fish' },
+  { type: 'sesame', label: 'Sesame' },
 ];
+
+const CALORIE_PRESETS = [1500, 1800, 2000, 2200, 2500];
 
 export default function OnboardingScreen() {
   const router = useRouter();
-  const { setSelectedTower, startSession } = useFocusFlow();
-  const [currentStep, setCurrentStep] = useState(0);
-  const [selectedTowerType, setSelectedTowerType] = useState<TowerType | null>(null);
-  const [intention, setIntention] = useState('');
-  const [selectedDuration, setSelectedDuration] = useState(1500);
+  const [step, setStep] = useState(0);
 
-  const handleNext = () => {
-    if (currentStep < 3) {
-      setCurrentStep(currentStep + 1);
-    }
+  const {
+    dietType,
+    allergies,
+    calorieTarget,
+    setDietType,
+    toggleAllergy,
+    setAllergies,
+    setCalorieTarget,
+    completeOnboarding,
+  } = useUserStore();
+
+  const { generateNewPlan } = useMealStore();
+
+  const handleFinish = () => {
+    completeOnboarding();
+    generateNewPlan();
+    router.replace('/(tabs)');
   };
 
-  const handleBack = () => {
-    if (currentStep > 0) {
-      setCurrentStep(currentStep - 1);
-    }
+  const handleSkip = () => {
+    handleFinish();
   };
 
-  const handleComplete = async () => {
-    if (selectedTowerType) {
-      setSelectedTower(selectedTowerType);
-      await storage.setOnboardingComplete();
-      // Start the first session
-      await startSession(
-        selectedTowerType,
-        selectedDuration,
-        intention || `Building my ${selectedTowerType} tower`
-      );
-      router.replace('/(tabs)');
-    }
-  };
-
-  const renderStep = () => {
-    switch (currentStep) {
-      case 0:
-        return (
-          <View style={styles.stepContainer}>
-            <View style={styles.hero}>
-              <Building2 size={80} color={colors.primary} style={styles.mainIcon} />
-              <Text style={styles.title}>Welcome to FocusFlow</Text>
-              <Text style={typography.subtitle}>Build your dream life, one focused moment at a time</Text>
-            </View>
-            <TouchableOpacity style={styles.cta} onPress={handleNext}>
-              <Text style={styles.ctaText}>Get Started</Text>
-            </TouchableOpacity>
+  // Step 0: Welcome
+  if (step === 0) {
+    return (
+      <SafeAreaView style={styles.container}>
+        <View style={styles.welcomeContent}>
+          <View style={styles.illustrationCircle}>
+            <Text style={styles.illustrationEmoji}>🫑🍄🥕</Text>
           </View>
-        );
-
-      case 1:
-        return (
-          <View style={styles.stepContainer}>
-            <Text style={styles.title}>Choose Your First Focus Area</Text>
-            <Text style={styles.subtitle}>What area of your life do you want to develop?</Text>
-            <ScrollView style={styles.optionsContainer} showsVerticalScrollIndicator={false}>
-              {TOWER_OPTIONS.map((option) => {
-                const Icon = option.icon;
-                const isSelected = selectedTowerType === option.id;
-                return (
-                  <TouchableOpacity
-                    key={option.id}
-                    style={[
-                      styles.optionCard,
-                      isSelected && { borderColor: option.color, borderWidth: 2 }
-                    ]}
-                    onPress={() => setSelectedTowerType(option.id)}
-                  >
-                    <View style={[styles.iconContainer, { backgroundColor: option.color + '20' }]}>
-                      <Icon size={24} color={option.color} />
-                    </View>
-                    <View style={styles.optionContent}>
-                      <Text style={styles.optionTitle}>{option.title}</Text>
-                      <Text style={styles.optionDescription}>{option.description}</Text>
-                    </View>
-                    {isSelected && (
-                      <View style={[styles.checkmark, { backgroundColor: option.color }]}>
-                        <Text style={styles.checkmarkText}>✓</Text>
-                      </View>
-                    )}
-                  </TouchableOpacity>
-                );
-              })}
-            </ScrollView>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
-                <Text style={styles.secondaryButtonText}>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={[styles.primaryButton, !selectedTowerType && styles.disabledButton]} 
-                onPress={handleNext}
-                disabled={!selectedTowerType}
-              >
-                <Text style={styles.primaryButtonText}>Continue</Text>
-                <ChevronRight size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-
-      case 2:
-        return (
-          <View style={styles.stepContainer}>
-            <Target size={60} color="#007AFF" style={styles.mainIcon} />
-            <Text style={styles.title}>Set Your Intention</Text>
-            <Text style={styles.subtitle}>What specific goal are you working toward?</Text>
-            <View style={styles.inputContainer}>
-              <Text style={styles.inputLabel}>My intention for today:</Text>
-              <TouchableOpacity
-                style={styles.textInput}
-                onPress={() => {
-                  // In a real app, this would open a text input modal
-                  setIntention('Focus on my goals');
-                }}
-              >
-                <Text style={[styles.textInputText, !intention && styles.placeholderText]}>
-                  {intention || 'Tap to enter your intention...'}
-                </Text>
-              </TouchableOpacity>
-            </View>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
-                <Text style={styles.secondaryButtonText}>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.primaryButton} onPress={handleNext}>
-                <Text style={styles.primaryButtonText}>Continue</Text>
-                <ChevronRight size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-
-      case 3:
-        return (
-          <View style={styles.stepContainer}>
-            <Clock size={60} color="#007AFF" style={styles.mainIcon} />
-            <Text style={styles.title}>Choose Your Focus Duration</Text>
-            <Text style={styles.subtitle}>How long can you focus right now?</Text>
-            <View style={styles.durationContainer}>
-              {DURATION_OPTIONS.map((option) => (
-                <TouchableOpacity
-                  key={option.duration}
-                  style={[
-                    styles.durationCard,
-                    selectedDuration === option.duration && styles.selectedDuration
-                  ]}
-                  onPress={() => setSelectedDuration(option.duration)}
-                >
-                  <Text style={[
-                    styles.durationLabel,
-                    selectedDuration === option.duration && styles.selectedDurationText
-                  ]}>
-                    {option.label}
-                  </Text>
-                  <Text style={[
-                    styles.durationSubtitle,
-                    selectedDuration === option.duration && styles.selectedDurationText
-                  ]}>
-                    {option.subtitle}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <View style={styles.buttonRow}>
-              <TouchableOpacity style={styles.secondaryButton} onPress={handleBack}>
-                <Text style={styles.secondaryButtonText}>Back</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.primaryButton} onPress={handleComplete}>
-                <Text style={styles.primaryButtonText}>Start Building</Text>
-                <Building2 size={20} color="#FFFFFF" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        );
-
-      default:
-        return null;
-    }
-  };
+          <Text style={styles.welcomeTitle}>
+            Plan meals you'll{'\n'}actually cook
+          </Text>
+          <Text style={styles.welcomeSubtitle}>
+            Personalized weekly plans, auto-generated grocery lists, and recipes
+            you'll love — all in 30 seconds.
+          </Text>
+          <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(1)}>
+            <Text style={styles.primaryButtonText}>Get Started</Text>
+          </TouchableOpacity>
+          <Text style={styles.fineprint}>
+            No account required. Free forever with optional premium.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.progressContainer}>
-        {[0, 1, 2, 3].map((step) => (
-          <View
-            key={step}
-            style={[
-              styles.progressDot,
-              step === currentStep && styles.progressDotActive,
-              step < currentStep && styles.progressDotComplete
-            ]}
-          />
-        ))}
+      <View style={styles.header}>
+        <TouchableOpacity onPress={() => setStep(Math.max(0, step - 1))}>
+          <Ionicons name="chevron-back" size={24} color={Colors.textPrimary} />
+        </TouchableOpacity>
+        <View style={styles.progressBar}>
+          {[1, 2, 3].map((s) => (
+            <View
+              key={s}
+              style={[styles.progressDot, s <= step && styles.progressDotActive]}
+            />
+          ))}
+        </View>
+        <TouchableOpacity onPress={handleSkip}>
+          <Text style={styles.skipText}>Skip</Text>
+        </TouchableOpacity>
       </View>
-      {renderStep()}
+
+      {/* Step 1: Dietary Profile */}
+      {step === 1 && (
+        <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.stepTitle}>What do you eat?</Text>
+          <Text style={styles.stepSubtitle}>
+            Select your dietary preference. You can change this later in settings.
+          </Text>
+          <View style={styles.optionsContainer}>
+            {DIET_OPTIONS.map((opt) => (
+              <TouchableOpacity
+                key={opt.type}
+                style={[
+                  styles.dietOption,
+                  dietType === opt.type && styles.dietOptionSelected,
+                ]}
+                onPress={() => setDietType(opt.type)}
+              >
+                <View style={styles.dietOptionLeft}>
+                  <Text style={styles.dietOptionLabel}>{opt.label}</Text>
+                  <Text style={styles.dietOptionDesc}>{opt.desc}</Text>
+                </View>
+                <View
+                  style={[
+                    styles.radioOuter,
+                    dietType === opt.type && styles.radioOuterSelected,
+                  ]}
+                >
+                  {dietType === opt.type && <View style={styles.radioInner} />}
+                </View>
+              </TouchableOpacity>
+            ))}
+          </View>
+          <View style={styles.bottomAction}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(2)}>
+              <Text style={styles.primaryButtonText}>Continue</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
+
+      {/* Step 2: Allergies */}
+      {step === 2 && (
+        <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.stepTitle}>Any allergies?</Text>
+          <Text style={styles.stepSubtitle}>
+            We'll make sure these never appear in your meal plans. Select all that apply.
+          </Text>
+          <View style={styles.chipGrid}>
+            {ALLERGEN_OPTIONS.map((opt) => {
+              const isSelected = allergies.includes(opt.type);
+              return (
+                <TouchableOpacity
+                  key={opt.type}
+                  style={[styles.chip, isSelected && styles.chipSelected]}
+                  onPress={() => toggleAllergy(opt.type)}
+                >
+                  {isSelected && (
+                    <Ionicons name="checkmark" size={14} color="#fff" style={{ marginRight: 4 }} />
+                  )}
+                  <Text style={[styles.chipText, isSelected && styles.chipTextSelected]}>
+                    {opt.label}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+          <Text style={styles.disclaimer}>
+            MealMate provides nutritional information for reference only. Always check ingredient labels.
+          </Text>
+          <View style={styles.bottomAction}>
+            <TouchableOpacity style={styles.primaryButton} onPress={() => setStep(3)}>
+              <Text style={styles.primaryButtonText}>Continue</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.secondaryAction}
+              onPress={() => { setAllergies([]); setStep(3); }}
+            >
+              <Text style={styles.secondaryActionText}>No allergies</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
+
+      {/* Step 3: Calorie Target */}
+      {step === 3 && (
+        <ScrollView style={styles.stepContent} showsVerticalScrollIndicator={false}>
+          <Text style={styles.stepTitle}>Daily calorie goal</Text>
+          <Text style={styles.stepSubtitle}>
+            Optional. We'll balance your meal plans around this target.
+          </Text>
+          <Text style={styles.calorieDisplay}>
+            {calorieTarget ? calorieTarget.toLocaleString() : '—'}
+          </Text>
+          <Text style={styles.calorieLabel}>CALORIES PER DAY</Text>
+          <View style={styles.presetGrid}>
+            {CALORIE_PRESETS.map((cal) => (
+              <TouchableOpacity
+                key={cal}
+                style={[
+                  styles.presetChip,
+                  calorieTarget === cal && styles.presetChipSelected,
+                ]}
+                onPress={() => setCalorieTarget(cal)}
+              >
+                <Text
+                  style={[
+                    styles.presetChipText,
+                    calorieTarget === cal && styles.presetChipTextSelected,
+                  ]}
+                >
+                  {cal.toLocaleString()}
+                </Text>
+              </TouchableOpacity>
+            ))}
+            <TouchableOpacity style={styles.presetChip} onPress={() => setCalorieTarget(2000)}>
+              <Text style={styles.presetChipText}>Custom</Text>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.bottomAction}>
+            <TouchableOpacity style={styles.primaryButton} onPress={handleFinish}>
+              <Text style={styles.primaryButtonText}>Generate My Plan</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.secondaryAction}
+              onPress={() => { setCalorieTarget(null); handleFinish(); }}
+            >
+              <Text style={styles.secondaryActionText}>Skip — no calorie target</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      )}
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: colors.background,
+  container: { flex: 1, backgroundColor: Colors.background },
+  // Welcome
+  welcomeContent: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 32 },
+  illustrationCircle: {
+    width: 180, height: 180, borderRadius: 90,
+    backgroundColor: Colors.accentLight, alignItems: 'center', justifyContent: 'center', marginBottom: 48,
   },
-  progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingVertical: 20,
-    gap: 8,
+  illustrationEmoji: { fontSize: 48 },
+  welcomeTitle: {
+    fontFamily: 'DM Serif Display', fontSize: 32, lineHeight: 40,
+    letterSpacing: -0.64, color: Colors.textPrimary, textAlign: 'center', marginBottom: 16,
   },
-  progressDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: '#D1D5DB',
+  welcomeSubtitle: {
+    fontFamily: 'DM Sans', fontSize: 16, lineHeight: 24,
+    color: Colors.textSecondary, textAlign: 'center', marginBottom: 40,
   },
-  progressDotActive: {
-    width: 24,
-    backgroundColor: '#007AFF',
+  fineprint: { fontFamily: 'DM Sans', fontSize: 13, color: Colors.textTertiary, marginTop: 16 },
+  // Header
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingVertical: 12 },
+  progressBar: { flexDirection: 'row', gap: 8 },
+  progressDot: { width: 32, height: 4, borderRadius: 2, backgroundColor: Colors.border },
+  progressDotActive: { backgroundColor: Colors.accent },
+  skipText: { fontFamily: 'DM Sans', fontSize: 15, color: Colors.textSecondary },
+  // Steps
+  stepContent: { flex: 1, paddingHorizontal: 20 },
+  stepTitle: {
+    fontFamily: 'DM Serif Display', fontSize: 28, lineHeight: 34,
+    letterSpacing: -0.56, color: Colors.textPrimary, marginTop: 16, marginBottom: 8,
   },
-  progressDotComplete: {
-    backgroundColor: '#34C759',
+  stepSubtitle: { fontFamily: 'DM Sans', fontSize: 15, lineHeight: 22, color: Colors.textSecondary, marginBottom: 28 },
+  // Diet options
+  optionsContainer: { gap: 10 },
+  dietOption: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+    backgroundColor: Colors.surface, borderRadius: 14, padding: 16,
+    borderWidth: 1.5, borderColor: Colors.border,
   },
-  stepContainer: {
-    flex: 1,
-    paddingHorizontal: 20,
-    justifyContent: 'center',
+  dietOptionSelected: { borderColor: Colors.accent, backgroundColor: Colors.accentLight },
+  dietOptionLeft: { flex: 1 },
+  dietOptionLabel: { fontFamily: 'DM Sans', fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginBottom: 2 },
+  dietOptionDesc: { fontFamily: 'DM Sans', fontSize: 13, color: Colors.textSecondary },
+  radioOuter: { width: 22, height: 22, borderRadius: 11, borderWidth: 2, borderColor: Colors.border, alignItems: 'center', justifyContent: 'center' },
+  radioOuterSelected: { borderColor: Colors.accent },
+  radioInner: { width: 12, height: 12, borderRadius: 6, backgroundColor: Colors.accent },
+  // Chips
+  chipGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: {
+    flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10,
+    borderRadius: 12, borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.surface,
   },
-  mainIcon: {
-    alignSelf: 'center',
-    marginBottom: 24,
+  chipSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  chipText: { fontFamily: 'DM Sans', fontSize: 14, fontWeight: '500', color: Colors.textPrimary },
+  chipTextSelected: { color: '#fff' },
+  disclaimer: { fontFamily: 'DM Sans', fontSize: 13, lineHeight: 18, color: Colors.textTertiary, marginTop: 24 },
+  // Calories
+  calorieDisplay: { fontFamily: 'DM Serif Display', fontSize: 56, color: Colors.accent, textAlign: 'center', marginTop: 40, marginBottom: 4 },
+  calorieLabel: {
+    fontFamily: 'DM Sans', fontSize: 11, fontWeight: '600', letterSpacing: 1.2,
+    color: Colors.textTertiary, textAlign: 'center', marginBottom: 32,
   },
-  hero: {
-    marginBottom: 48,
-    alignItems: 'center',
+  presetGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center' },
+  presetChip: {
+    paddingHorizontal: 22, paddingVertical: 12, borderRadius: 14,
+    borderWidth: 1.5, borderColor: Colors.border, backgroundColor: Colors.surface, minWidth: 90, alignItems: 'center',
   },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold' as const,
-    color: colors.primary,
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  subtitle: {
-    fontSize: 16,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    marginBottom: 32,
-    lineHeight: 22,
-  },
-  cta: {
-    backgroundColor: colors.accent,
-    padding: 16,
-    borderRadius: 12,
-  },
-  ctaText: {
-    color: 'white',
-    fontSize: 18,
-    textAlign: 'center',
-    fontWeight: '600' as const,
-  },
-  optionsContainer: {
-    maxHeight: 400,
-    marginBottom: 20,
-  },
-  optionCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  iconContainer: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 16,
-  },
-  optionContent: {
-    flex: 1,
-  },
-  optionTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#2C3E50',
-    marginBottom: 4,
-  },
-  optionDescription: {
-    fontSize: 14,
-    color: '#7F8C8D',
-  },
-  checkmark: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  checkmarkText: {
-    color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  inputContainer: {
-    marginBottom: 32,
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#7F8C8D',
-    marginBottom: 8,
-  },
-  textInput: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  textInputText: {
-    fontSize: 16,
-    color: '#2C3E50',
-  },
-  placeholderText: {
-    color: '#9CA3AF',
-  },
-  durationContainer: {
-    marginBottom: 32,
-  },
-  durationCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 20,
-    marginBottom: 12,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-  },
-  selectedDuration: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
-  },
-  durationLabel: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#2C3E50',
-    marginBottom: 4,
-  },
-  durationSubtitle: {
-    fontSize: 14,
-    color: '#7F8C8D',
-  },
-  selectedDurationText: {
-    color: '#FFFFFF',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  primaryButton: {
-    flex: 1,
-    backgroundColor: '#007AFF',
-    borderRadius: 12,
-    paddingVertical: 16,
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    gap: 8,
-  },
-  primaryButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  secondaryButton: {
-    paddingVertical: 16,
-    paddingHorizontal: 24,
-    borderRadius: 12,
-    backgroundColor: '#E5E7EB',
-  },
-  secondaryButtonText: {
-    color: '#2C3E50',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  disabledButton: {
-    backgroundColor: '#9CA3AF',
-    opacity: 0.5,
-  },
+  presetChipSelected: { backgroundColor: Colors.accent, borderColor: Colors.accent },
+  presetChipText: { fontFamily: 'DM Sans', fontSize: 15, fontWeight: '600', color: Colors.textPrimary },
+  presetChipTextSelected: { color: '#fff' },
+  // Actions
+  bottomAction: { paddingVertical: 20, paddingBottom: 32 },
+  primaryButton: { backgroundColor: Colors.accent, borderRadius: 16, paddingVertical: 16, alignItems: 'center' },
+  primaryButtonText: { fontFamily: 'DM Sans', fontSize: 16, fontWeight: '700', color: '#fff' },
+  secondaryAction: { alignItems: 'center', paddingVertical: 14 },
+  secondaryActionText: { fontFamily: 'DM Sans', fontSize: 14, color: Colors.textSecondary },
 });

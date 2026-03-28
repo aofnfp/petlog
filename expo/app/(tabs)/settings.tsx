@@ -1,431 +1,142 @@
-import React, { useState } from "react";
-import { View, Text, StyleSheet, Switch, ScrollView, TouchableOpacity, Alert, Modal } from "react-native";
+import React from 'react';
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  SafeAreaView,
+  Alert,
+} from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { Colors } from '@/constants/colors';
+import { useUserStore } from '@/store/user-store';
+import { useMealStore } from '@/store/meal-store';
 
-import { useFocusFlow } from "@/store/focusflow-context";
-import { useTheme } from "@/store/theme-context";
-import { storage } from "@/lib/storage";
-import { ChevronRight } from "lucide-react-native";
+const DIET_LABELS: Record<string, string> = {
+  omnivore: 'Omnivore',
+  vegetarian: 'Vegetarian',
+  vegan: 'Vegan',
+  keto: 'Keto',
+  pescatarian: 'Pescatarian',
+  paleo: 'Paleo',
+  'gluten-free': 'Gluten-Free',
+};
 
 export default function SettingsScreen() {
-  const { settings, updateSettings, reloadData } = useFocusFlow();
-  const { currentTheme, themes, applyTheme, previewTheme, colors: themeColors } = useTheme();
-  const [constructionSounds, setConstructionSounds] = useState(settings?.constructionSounds ?? true);
-  const [celebrationEffects, setCelebrationEffects] = useState(settings?.celebrationEffects ?? true);
-  const [volume, setVolume] = useState(settings?.volume ?? 70);
+  const { dietType, allergies, calorieTarget, resetProfile } = useUserStore();
+  const { deleteAllData } = useMealStore();
 
-  const [sessionReminders, setSessionReminders] = useState(settings?.sessionReminders ?? true);
-  const [streakNotifications, setStreakNotifications] = useState(settings?.streakNotifications ?? true);
-  const [impactUpdates, setImpactUpdates] = useState(settings?.impactUpdates ?? true);
-
-  const [weatherEffects, setWeatherEffects] = useState(settings?.weatherEffects ?? true);
-  const [showThemePicker, setShowThemePicker] = useState(false);
-  const [previewThemeId, setPreviewThemeId] = useState<string | null>(null);
+  const handleDeleteAll = () => {
+    Alert.alert(
+      'Delete All Data',
+      'This will permanently remove all your meal plans, grocery lists, favorites, and preferences. This cannot be undone.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Delete Everything',
+          style: 'destructive',
+          onPress: () => {
+            deleteAllData();
+            resetProfile();
+          },
+        },
+      ]
+    );
+  };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: themeColors.background }]} contentContainerStyle={{ paddingBottom: 24 }}>
-      <Text style={[styles.title, { color: themeColors.textPrimary }]}>Settings</Text>
+    <SafeAreaView style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false}>
+        <Text style={styles.title}>Settings</Text>
 
-      {/* Timer Settings */}
-      <View style={[styles.section, { backgroundColor: themeColors.surface, borderColor: themeColors.outline }]}>
-        <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Timer Settings</Text>
-        <Row
-          label="Construction Sounds"
-          right={
-            <Switch 
-              value={constructionSounds} 
-              onValueChange={(value) => {
-                setConstructionSounds(value);
-                updateSettings({ constructionSounds: value });
-              }} 
-            />
-          }
-        />
-        <Row
-          label="Celebration Effects"
-          right={
-            <Switch 
-              value={celebrationEffects} 
-              onValueChange={(value) => {
-                setCelebrationEffects(value);
-                updateSettings({ celebrationEffects: value });
-              }} 
-            />
-          }
-        />
-        <View style={styles.sliderRow}>
-          <Text style={[styles.rowLabel, { color: themeColors.textPrimary }]}>Volume: {volume}%</Text>
-        </View>
-      </View>
-
-      {/* Notifications */}
-      <View style={[styles.section, { backgroundColor: themeColors.surface, borderColor: themeColors.outline }]}>
-        <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Notifications</Text>
-        <Row 
-          label="Session Reminders" 
-          right={
-            <Switch 
-              value={sessionReminders} 
-              onValueChange={(value) => {
-                setSessionReminders(value);
-                updateSettings({ sessionReminders: value });
-              }} 
-            />
-          } 
-        />
-        <Row 
-          label="Streak Notifications" 
-          right={
-            <Switch 
-              value={streakNotifications} 
-              onValueChange={(value) => {
-                setStreakNotifications(value);
-                updateSettings({ streakNotifications: value });
-              }} 
-            />
-          } 
-        />
-        <Row 
-          label="Impact Updates" 
-          right={
-            <Switch 
-              value={impactUpdates} 
-              onValueChange={(value) => {
-                setImpactUpdates(value);
-                updateSettings({ impactUpdates: value });
-              }} 
-            />
-          } 
-        />
-      </View>
-
-      {/* City Customization */}
-      <View style={[styles.section, { backgroundColor: themeColors.surface, borderColor: themeColors.outline }]}>
-        <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>City Customization</Text>
-        <Row label="Building Style" right={<Text style={[styles.valuePill, { backgroundColor: `${themeColors.primary}22`, color: themeColors.primary }]}>Modern</Text>} />
-        <Row 
-          label="Weather Effects" 
-          right={
-            <Switch 
-              value={weatherEffects} 
-              onValueChange={(value) => {
-                setWeatherEffects(value);
-                updateSettings({ weatherEffects: value });
-              }} 
-            />
-          } 
-        />
-      </View>
-
-      {/* Theme / Privacy / About */}
-      <View style={[styles.section, { backgroundColor: themeColors.surface, borderColor: themeColors.outline }]}>
-        <TouchableOpacity onPress={() => setShowThemePicker(true)}>
-          <Row 
-            label="Theme" 
-            right={
-              <View style={styles.themeRow}>
-                <Text style={[styles.valuePill, { backgroundColor: `${themeColors.primary}22`, color: themeColors.primary }]}>{currentTheme.name}</Text>
-                <ChevronRight size={16} color={themeColors.textSecondary} />
-              </View>
-            } 
-          />
-        </TouchableOpacity>
-        <Row label="Privacy" right={<Text style={[styles.valuePill, { backgroundColor: `${themeColors.primary}22`, color: themeColors.primary }]}>Standard</Text>} />
-        <Row label="About & Version" right={<Text style={[styles.valuePill, { backgroundColor: `${themeColors.primary}22`, color: themeColors.primary }]}>v0.1.0</Text>} />
-      </View>
-
-      {/* Debug Section */}
-      <View style={[styles.section, { backgroundColor: themeColors.surface, borderColor: themeColors.outline }]}>
-        <Text style={[styles.sectionTitle, { color: themeColors.textPrimary }]}>Debug & Reset</Text>
-        <TouchableOpacity 
-          style={[styles.debugButton, { backgroundColor: themeColors.secondary }]}
-          onPress={async () => {
-            Alert.alert(
-              'Fix JSON Parse Error',
-              'This will scan and remove any corrupted data from storage. Continue?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Fix',
-                  onPress: async () => {
-                    try {
-                      console.log('Starting storage fix...');
-                      const result = await storage.validateAndFixStorage();
-                      
-                      if (result.errors.length > 0) {
-                        console.log('Storage errors found:', result.errors);
-                      }
-                      
-                      // Reload data
-                      await reloadData();
-                      
-                      Alert.alert(
-                        'Success', 
-                        result.fixed 
-                          ? `Fixed ${result.errors.length} corrupted entries. App should work now.`
-                          : 'No corrupted data found. Storage is clean.'
-                      );
-                    } catch (error) {
-                      console.error('Debug error:', error);
-                      Alert.alert('Error', 'Failed to fix storage: ' + (error as Error).message);
-                    }
-                  },
-                },
-              ]
-            );
-          }}
-        >
-          <Text style={[styles.debugButtonText, { color: themeColors.onSecondary }]}>Fix JSON Parse Error</Text>
-        </TouchableOpacity>
-        
-        <TouchableOpacity 
-          style={[styles.debugButton, styles.debugButtonDanger, { backgroundColor: themeColors.danger }]}
-          onPress={() => {
-            Alert.alert(
-              'Clear All Data',
-              'This will reset all your progress, achievements, and settings. Are you sure?',
-              [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                  text: 'Clear',
-                  style: 'destructive',
-                  onPress: async () => {
-                    await storage.clearAll();
-                    await reloadData();
-                    Alert.alert('Success', 'All data has been cleared');
-                  },
-                },
-              ]
-            );
-          }}
-        >
-          <Text style={[styles.debugButtonText, { color: '#FFFFFF' }]}>Clear All Data</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Theme Picker Modal */}
-      <Modal
-        visible={showThemePicker}
-        animationType="slide"
-        presentationStyle="pageSheet"
-        onRequestClose={() => {
-          setShowThemePicker(false);
-          if (previewThemeId) {
-            applyTheme(currentTheme.id);
-            setPreviewThemeId(null);
-          }
-        }}
-      >
-        <View style={[styles.modalContainer, { backgroundColor: themeColors.background }]}>
-          <View style={styles.modalHeader}>
-            <Text style={[styles.modalTitle, { color: themeColors.textPrimary }]}>Choose Theme</Text>
-            <TouchableOpacity 
-              onPress={() => {
-                setShowThemePicker(false);
-                if (previewThemeId) {
-                  applyTheme(currentTheme.id);
-                  setPreviewThemeId(null);
-                }
-              }}
-            >
-              <Text style={[styles.modalClose, { color: themeColors.textSecondary }]}>Cancel</Text>
-            </TouchableOpacity>
+        {/* Premium CTA */}
+        <TouchableOpacity style={styles.premiumCard}>
+          <View style={styles.premiumContent}>
+            <Text style={styles.premiumTitle}>Go Premium</Text>
+            <Text style={styles.premiumSubtitle}>AI plans, pantry tracking, no ads. $4.99/mo</Text>
           </View>
-          
-          <ScrollView style={styles.themeList}>
-            {themes.map((theme) => (
-              <TouchableOpacity
-                key={theme.id}
-                style={[
-                  styles.themeItem,
-                  { 
-                    backgroundColor: themeColors.surface,
-                    borderColor: theme.id === (previewThemeId || currentTheme.id) ? themeColors.primary : themeColors.outline,
-                    borderWidth: theme.id === (previewThemeId || currentTheme.id) ? 2 : 1,
-                  }
-                ]}
-                onPress={() => {
-                  setPreviewThemeId(theme.id);
-                  previewTheme(theme.id);
-                }}
-              >
-                <View style={styles.themePreview}>
-                  <View style={[styles.colorSwatch, { backgroundColor: theme.colors.primary }]} />
-                  <View style={[styles.colorSwatch, { backgroundColor: theme.colors.secondary }]} />
-                  <View style={[styles.colorSwatch, { backgroundColor: theme.colors.accent }]} />
-                  <View style={[styles.colorSwatch, { backgroundColor: theme.colors.background }]} />
-                </View>
-                <Text style={[styles.themeName, { color: themeColors.textPrimary }]}>{theme.name}</Text>
-                {theme.id === (previewThemeId || currentTheme.id) && (
-                  <View style={[styles.selectedBadge, { backgroundColor: themeColors.primary }]}>
-                    <Text style={[styles.selectedText, { color: themeColors.onPrimary }]}>✓</Text>
-                  </View>
-                )}
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-          
-          <View style={[styles.modalFooter, { backgroundColor: themeColors.surface, borderTopColor: themeColors.outline }]}>
-            <TouchableOpacity
-              style={[styles.applyButton, { backgroundColor: themeColors.primary }]}
-              onPress={() => {
-                if (previewThemeId) {
-                  applyTheme(previewThemeId);
-                }
-                setShowThemePicker(false);
-                setPreviewThemeId(null);
-              }}
-            >
-              <Text style={[styles.applyButtonText, { color: themeColors.onPrimary }]}>Apply Theme</Text>
-            </TouchableOpacity>
-          </View>
+          <Ionicons name="chevron-forward" size={20} color="#fff" />
+        </TouchableOpacity>
+
+        {/* Diet & Nutrition */}
+        <Text style={styles.sectionLabel}>DIET & NUTRITION</Text>
+        <View style={styles.settingsGroup}>
+          <SettingRow label="Dietary Preference" value={DIET_LABELS[dietType] || dietType} />
+          <SettingRow label="Allergies" value={allergies.length > 0 ? allergies.map((a) => a.charAt(0).toUpperCase() + a.slice(1)).join(', ') : 'None'} />
+          <SettingRow label="Calorie Target" value={calorieTarget ? `${calorieTarget.toLocaleString()}/day` : 'Not set'} />
+          <SettingRow label="Measurement Units" value="US" isLast />
         </View>
-      </Modal>
-    </ScrollView>
+
+        {/* App */}
+        <Text style={styles.sectionLabel}>APP</Text>
+        <View style={styles.settingsGroup}>
+          <SettingRow label="Notifications" />
+          <SettingRow label="Plan History" />
+          <SettingRow label="Export My Data" isLast />
+        </View>
+
+        {/* About */}
+        <Text style={styles.sectionLabel}>ABOUT</Text>
+        <View style={styles.settingsGroup}>
+          <SettingRow label="Privacy Policy" isLast />
+        </View>
+
+        {/* Delete */}
+        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAll}>
+          <Text style={styles.deleteButtonText}>Delete All Data</Text>
+        </TouchableOpacity>
+
+        <View style={{ height: 40 }} />
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
-interface RowProps {
-  label: string;
-  right: React.ReactNode;
-}
-
-function Row({ label, right }: RowProps) {
-  const { colors } = useTheme();
+function SettingRow({ label, value, isLast }: { label: string; value?: string; isLast?: boolean }) {
   return (
-    <View style={styles.row}>
-      <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>{label}</Text>
-      {right}
-    </View>
+    <TouchableOpacity style={[styles.settingRow, !isLast && styles.settingRowBorder]}>
+      <Text style={styles.settingLabel}>{label}</Text>
+      <View style={styles.settingRight}>
+        {value && <Text style={styles.settingValue}>{value}</Text>}
+        <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
+      </View>
+    </TouchableOpacity>
   );
 }
 
 const styles = StyleSheet.create({
-  modalContainer: {
-    flex: 1,
+  container: { flex: 1, backgroundColor: Colors.background },
+  title: {
+    fontFamily: 'DM Serif Display', fontSize: 28, letterSpacing: -0.56,
+    color: Colors.textPrimary, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20,
   },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 16,
-    borderBottomWidth: 1,
-    borderBottomColor: '#E5E7EB',
+  // Premium
+  premiumCard: {
+    flexDirection: 'row', alignItems: 'center', marginHorizontal: 20,
+    backgroundColor: Colors.accent, borderRadius: 16, padding: 18, marginBottom: 28,
   },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '700' as const,
+  premiumContent: { flex: 1 },
+  premiumTitle: { fontFamily: 'DM Sans', fontSize: 17, fontWeight: '700', color: '#fff', marginBottom: 2 },
+  premiumSubtitle: { fontFamily: 'DM Sans', fontSize: 13, color: 'rgba(255,255,255,0.8)' },
+  // Sections
+  sectionLabel: {
+    fontFamily: 'DM Sans', fontSize: 11, fontWeight: '600', letterSpacing: 0.8,
+    color: Colors.textTertiary, paddingHorizontal: 20, marginBottom: 8,
   },
-  modalClose: {
-    fontSize: 16,
-    fontWeight: '600' as const,
+  settingsGroup: {
+    backgroundColor: Colors.surface, marginHorizontal: 20, borderRadius: 14,
+    borderWidth: 1, borderColor: Colors.border, marginBottom: 24,
   },
-  themeList: {
-    flex: 1,
-    padding: 16,
+  settingRow: {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    paddingHorizontal: 16, paddingVertical: 15,
   },
-  themeItem: {
-    padding: 16,
-    borderRadius: 12,
-    marginBottom: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  themePreview: {
-    flexDirection: 'row',
-    gap: 8,
-    marginRight: 16,
-  },
-  colorSwatch: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-  },
-  themeName: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: '600' as const,
-  },
-  selectedBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  selectedText: {
-    fontSize: 14,
-    fontWeight: '700' as const,
-  },
-  modalFooter: {
-    padding: 16,
-    borderTopWidth: 1,
-  },
-  themeRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  applyButton: {
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: 'center',
-  },
-  applyButtonText: {
-    fontSize: 16,
-    fontWeight: '700' as const,
-  },
-  container: { 
-    flex: 1, 
-    padding: 16 
-  },
-  title: { 
-    fontSize: 22, 
-    fontWeight: "800" as const, 
-    marginBottom: 8 
-  },
-  section: {
-    padding: 12,
-    borderRadius: 12,
-    marginBottom: 12,
-    borderWidth: 1,
-  },
-  sectionTitle: { 
-    fontWeight: "800" as const, 
-    marginBottom: 8 
-  },
-  row: { 
-    flexDirection: "row", 
-    justifyContent: "space-between", 
-    alignItems: "center", 
-    paddingVertical: 10 
-  },
-  rowLabel: { 
-    fontSize: 14, 
-    fontWeight: "600" as const 
-  },
-  sliderRow: { 
-    flexDirection: "row", 
-    alignItems: "center", 
-    gap: 12, 
-    paddingVertical: 12 
-  },
-  valuePill: {
-    paddingVertical: 6,
-    paddingHorizontal: 10,
-    borderRadius: 12,
-    fontWeight: "700" as const,
-  },
-  debugButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 8,
-    alignItems: 'center',
-  },
-  debugButtonDanger: {
-    marginTop: 12,
-  },
-  debugButtonText: {
-    fontSize: 14,
-    fontWeight: '600' as const,
-  },
+  settingRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
+  settingLabel: { fontFamily: 'DM Sans', fontSize: 15, color: Colors.textPrimary },
+  settingRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  settingValue: { fontFamily: 'DM Sans', fontSize: 14, color: Colors.textTertiary },
+  // Delete
+  deleteButton: { alignItems: 'flex-start', paddingHorizontal: 20, paddingVertical: 8 },
+  deleteButtonText: { fontFamily: 'DM Sans', fontSize: 15, color: '#D94040' },
 });

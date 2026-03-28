@@ -1,25 +1,66 @@
-import { StyleSheet } from "react-native";
-import { colors } from "./colors";
+import { TextStyle } from 'react-native';
 
-export const typography = StyleSheet.create({
-  timer: { 
-    fontSize: 36, 
-    fontWeight: "bold" as const, 
-    color: colors.textPrimary 
+export const Typography: Record<string, TextStyle> = {
+  displayLarge: {
+    fontFamily: 'DM Serif Display',
+    fontSize: 36,
+    lineHeight: 42,
+    letterSpacing: -0.72,
   },
-  label: { 
-    fontSize: 18, 
-    fontWeight: "600" as const, 
-    color: colors.textPrimary 
+  displayMedium: {
+    fontFamily: 'DM Serif Display',
+    fontSize: 28,
+    lineHeight: 34,
+    letterSpacing: -0.56,
   },
-  subtitle: { 
-    fontSize: 16, 
-    fontWeight: "500" as const, 
-    color: colors.textSecondary 
+  displaySmall: {
+    fontFamily: 'DM Serif Display',
+    fontSize: 24,
+    lineHeight: 30,
+    letterSpacing: -0.48,
   },
-  body: { 
-    fontSize: 14, 
-    fontWeight: "400" as const, 
-    color: colors.textPrimary 
+  titleLarge: {
+    fontFamily: 'DM Sans',
+    fontSize: 20,
+    lineHeight: 26,
+    fontWeight: '700',
   },
-});
+  titleMedium: {
+    fontFamily: 'DM Sans',
+    fontSize: 17,
+    lineHeight: 22,
+    fontWeight: '600',
+  },
+  bodyLarge: {
+    fontFamily: 'DM Sans',
+    fontSize: 16,
+    lineHeight: 22,
+    fontWeight: '400',
+  },
+  bodyMedium: {
+    fontFamily: 'DM Sans',
+    fontSize: 14,
+    lineHeight: 20,
+    fontWeight: '400',
+  },
+  bodySmall: {
+    fontFamily: 'DM Sans',
+    fontSize: 13,
+    lineHeight: 18,
+    fontWeight: '400',
+  },
+  label: {
+    fontFamily: 'DM Sans',
+    fontSize: 11,
+    lineHeight: 14,
+    fontWeight: '600',
+    letterSpacing: 0.8,
+    textTransform: 'uppercase',
+  },
+  caption: {
+    fontFamily: 'DM Sans',
+    fontSize: 12,
+    lineHeight: 16,
+    fontWeight: '400',
+  },
+} as const;
