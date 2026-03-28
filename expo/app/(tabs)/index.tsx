@@ -13,6 +13,7 @@ import { Colors } from '@/constants/colors';
 import { useMealStore } from '@/store/meal-store';
 import { getRecipeById } from '@/lib/plan-generator';
 import { DAY_NAMES, MealType, Recipe } from '@/types';
+import SwapSheet from '@/components/SwapSheet';
 
 const MEAL_LABELS: Record<MealType, { label: string; color: string }> = {
   breakfast: { label: 'BREAKFAST', color: Colors.accent },
@@ -23,6 +24,7 @@ const MEAL_LABELS: Record<MealType, { label: string; color: string }> = {
 export default function PlanScreen() {
   const router = useRouter();
   const { currentPlan, selectedDay, setSelectedDay, generateNewPlan, favorites, toggleFavorite } = useMealStore();
+  const [swapTarget, setSwapTarget] = useState<{ dayOfWeek: number; mealType: MealType; recipeId: string } | null>(null);
 
   const today = new Date();
   const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
@@ -140,6 +142,16 @@ export default function PlanScreen() {
                     {recipe.calories} cal  |  {recipe.totalTimeMinutes} min
                   </Text>
                 </View>
+                <TouchableOpacity
+                  style={styles.swapIconButton}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    setSwapTarget({ dayOfWeek: meal.dayOfWeek, mealType: meal.mealType, recipeId: recipe.id });
+                  }}
+                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                >
+                  <Ionicons name="swap-horizontal-outline" size={18} color={Colors.textTertiary} />
+                </TouchableOpacity>
               </TouchableOpacity>
             );
           })}
@@ -169,6 +181,16 @@ export default function PlanScreen() {
 
         <View style={{ height: 20 }} />
       </ScrollView>
+
+      {swapTarget && (
+        <SwapSheet
+          visible={!!swapTarget}
+          onClose={() => setSwapTarget(null)}
+          dayOfWeek={swapTarget.dayOfWeek}
+          mealType={swapTarget.mealType}
+          currentRecipeId={swapTarget.recipeId}
+        />
+      )}
     </SafeAreaView>
   );
 }
@@ -230,6 +252,10 @@ const styles = StyleSheet.create({
     fontFamily: 'DM Sans', fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginBottom: 4,
   },
   mealCardMeta: { fontFamily: 'DM Sans', fontSize: 13, color: Colors.textTertiary },
+  swapIconButton: {
+    width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.background,
+    alignItems: 'center', justifyContent: 'center', alignSelf: 'center',
+  },
   // Macro bar
   macroBar: {
     flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
