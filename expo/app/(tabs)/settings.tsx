@@ -3,142 +3,214 @@ import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  SafeAreaView,
+  TouchableOpacity,
   Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { useUserStore } from '@/store/user-store';
-import { useMealStore } from '@/store/meal-store';
-
-const DIET_LABELS: Record<string, string> = {
-  omnivore: 'Omnivore',
-  vegetarian: 'Vegetarian',
-  vegan: 'Vegan',
-  keto: 'Keto',
-  pescatarian: 'Pescatarian',
-  paleo: 'Paleo',
-  'gluten-free': 'Gluten-Free',
-};
+import { Typography } from '@/constants/typography';
+import { usePetStore } from '@/store/pet-store';
 
 export default function SettingsScreen() {
-  const router = useRouter();
-  const { dietType, allergies, calorieTarget, resetProfile } = useUserStore();
-  const { deleteAllData } = useMealStore();
+  const { pets, weightUnit, setWeightUnit, deleteAllData } = usePetStore();
 
   const handleDeleteAll = () => {
     Alert.alert(
       'Delete All Data',
-      'This will permanently remove all your meal plans, grocery lists, favorites, and preferences. This cannot be undone.',
+      'This will permanently delete all pets and health records. This cannot be undone.',
       [
         { text: 'Cancel', style: 'cancel' },
         {
           text: 'Delete Everything',
           style: 'destructive',
-          onPress: () => {
-            deleteAllData();
-            resetProfile();
-          },
+          onPress: () => deleteAllData(),
         },
       ]
     );
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <Text style={styles.title}>Settings</Text>
+    <View style={styles.container}>
+      <Text style={styles.title}>Settings</Text>
 
-        {/* Premium CTA */}
-        <TouchableOpacity style={styles.premiumCard}>
-          <View style={styles.premiumContent}>
-            <Text style={styles.premiumTitle}>Go Premium</Text>
-            <Text style={styles.premiumSubtitle}>AI plans, pantry tracking, no ads. $4.99/mo</Text>
+      <ScrollView contentContainerStyle={styles.content}>
+        {/* Premium Banner */}
+        <View style={styles.premiumBanner}>
+          <View style={styles.premiumHeader}>
+            <Ionicons name="star" size={20} color="#F5C842" />
+            <Text style={styles.premiumTitle}>PetLog Premium</Text>
           </View>
-          <Ionicons name="chevron-forward" size={20} color="#fff" />
-        </TouchableOpacity>
-
-        {/* Diet & Nutrition */}
-        <Text style={styles.sectionLabel}>DIET & NUTRITION</Text>
-        <View style={styles.settingsGroup}>
-          <SettingRow label="Dietary Preference" value={DIET_LABELS[dietType] || dietType} />
-          <SettingRow label="Allergies" value={allergies.length > 0 ? allergies.map((a) => a.charAt(0).toUpperCase() + a.slice(1)).join(', ') : 'None'} />
-          <SettingRow label="Calorie Target" value={calorieTarget ? `${calorieTarget.toLocaleString()}/day` : 'Not set'} />
-          <SettingRow label="Measurement Units" value="US" isLast />
+          <Text style={styles.premiumDesc}>
+            Unlimited pets, health reports, document storage, and no ads. $3.99/mo
+          </Text>
+          <TouchableOpacity style={styles.premiumButton}>
+            <Text style={styles.premiumButtonText}>Try Free for 7 Days</Text>
+          </TouchableOpacity>
         </View>
 
-        {/* App */}
-        <Text style={styles.sectionLabel}>APP</Text>
-        <View style={styles.settingsGroup}>
-          <SettingRow label="Notifications" />
-          <SettingRow label="Plan History" onPress={() => router.push('/history')} />
-          <SettingRow label="Export My Data" isLast />
+        {/* Pet Profiles */}
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.settingsRow}>
+            <View style={[styles.rowIcon, { backgroundColor: Colors.accentLight }]}>
+              <Ionicons name="paw" size={16} color={Colors.accent} />
+            </View>
+            <Text style={styles.rowLabel}>Pet Profiles</Text>
+            <Text style={styles.rowValue}>{pets.length} pet{pets.length !== 1 ? 's' : ''}</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsRow}>
+            <View style={[styles.rowIcon, { backgroundColor: Colors.accentLight }]}>
+              <Ionicons name="add" size={16} color={Colors.accent} />
+            </View>
+            <Text style={styles.rowLabel}>Add New Pet</Text>
+            <View style={styles.premiumBadge}>
+              <Text style={styles.premiumBadgeText}>PREMIUM</Text>
+            </View>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          </TouchableOpacity>
+        </View>
+
+        {/* Preferences */}
+        <View style={styles.section}>
+          <TouchableOpacity
+            style={styles.settingsRow}
+            onPress={() => setWeightUnit(weightUnit === 'lbs' ? 'kg' : 'lbs')}
+          >
+            <View style={[styles.rowIcon, { backgroundColor: Colors.orangeLight }]}>
+              <Ionicons name="trending-up" size={16} color={Colors.orange} />
+            </View>
+            <Text style={styles.rowLabel}>Weight Unit</Text>
+            <Text style={styles.rowValue}>{weightUnit}</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsRow}>
+            <View style={[styles.rowIcon, { backgroundColor: Colors.warningLight }]}>
+              <Ionicons name="notifications-outline" size={16} color={Colors.warning} />
+            </View>
+            <Text style={styles.rowLabel}>Notifications</Text>
+            <Text style={styles.rowValue}>On</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsRow}>
+            <View style={[styles.rowIcon, { backgroundColor: Colors.blueLight }]}>
+              <Ionicons name="time-outline" size={16} color={Colors.blue} />
+            </View>
+            <Text style={styles.rowLabel}>Reminder Times</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          </TouchableOpacity>
         </View>
 
         {/* About */}
-        <Text style={styles.sectionLabel}>ABOUT</Text>
-        <View style={styles.settingsGroup}>
-          <SettingRow label="Privacy Policy" isLast />
+        <View style={styles.section}>
+          <TouchableOpacity style={styles.settingsRow}>
+            <Text style={styles.rowLabelPlain}>Privacy Policy</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.settingsRow}>
+            <Text style={styles.rowLabelPlain}>About PetLog</Text>
+            <Text style={styles.rowValue}>v1.0</Text>
+            <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+          </TouchableOpacity>
         </View>
 
-        {/* Delete */}
-        <TouchableOpacity style={styles.deleteButton} onPress={handleDeleteAll}>
-          <Text style={styles.deleteButtonText}>Delete All Data</Text>
+        <TouchableOpacity onPress={handleDeleteAll}>
+          <Text style={styles.deleteText}>Delete All Data</Text>
         </TouchableOpacity>
+
+        <Text style={styles.disclaimer}>
+          PetLog is a health record tracker, not a substitute for veterinary advice.
+          Always follow your veterinarian's instructions.
+        </Text>
 
         <View style={{ height: 40 }} />
       </ScrollView>
-    </SafeAreaView>
-  );
-}
-
-function SettingRow({ label, value, isLast, onPress }: { label: string; value?: string; isLast?: boolean; onPress?: () => void }) {
-  return (
-    <TouchableOpacity style={[styles.settingRow, !isLast && styles.settingRowBorder]} onPress={onPress}>
-      <Text style={styles.settingLabel}>{label}</Text>
-      <View style={styles.settingRight}>
-        {value && <Text style={styles.settingValue}>{value}</Text>}
-        <Ionicons name="chevron-forward" size={16} color={Colors.textTertiary} />
-      </View>
-    </TouchableOpacity>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
   title: {
-    fontFamily: 'DM Serif Display', fontSize: 28, letterSpacing: -0.56,
-    color: Colors.textPrimary, paddingHorizontal: 20, paddingTop: 8, paddingBottom: 20,
+    ...Typography.displayMedium,
+    color: Colors.textPrimary,
+    paddingHorizontal: 20,
+    paddingTop: 60,
+    marginBottom: 20,
   },
-  // Premium
-  premiumCard: {
-    flexDirection: 'row', alignItems: 'center', marginHorizontal: 20,
-    backgroundColor: Colors.accent, borderRadius: 16, padding: 18, marginBottom: 28,
+  content: { paddingHorizontal: 20 },
+  premiumBanner: {
+    backgroundColor: Colors.accent,
+    borderRadius: 16,
+    padding: 20,
+    marginBottom: 24,
   },
-  premiumContent: { flex: 1 },
-  premiumTitle: { fontFamily: 'DM Sans', fontSize: 17, fontWeight: '700', color: '#fff', marginBottom: 2 },
-  premiumSubtitle: { fontFamily: 'DM Sans', fontSize: 13, color: 'rgba(255,255,255,0.8)' },
-  // Sections
-  sectionLabel: {
-    fontFamily: 'DM Sans', fontSize: 11, fontWeight: '600', letterSpacing: 0.8,
-    color: Colors.textTertiary, paddingHorizontal: 20, marginBottom: 8,
+  premiumHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    marginBottom: 8,
   },
-  settingsGroup: {
-    backgroundColor: Colors.surface, marginHorizontal: 20, borderRadius: 14,
-    borderWidth: 1, borderColor: Colors.border, marginBottom: 24,
+  premiumTitle: { ...Typography.titleMedium, color: '#FFF' },
+  premiumDesc: { ...Typography.bodySmall, color: 'rgba(255,255,255,0.8)', lineHeight: 20, marginBottom: 16 },
+  premiumButton: {
+    backgroundColor: '#FFF',
+    borderRadius: 12,
+    paddingVertical: 14,
+    alignItems: 'center',
   },
-  settingRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 16, paddingVertical: 15,
+  premiumButtonText: { ...Typography.titleMedium, color: Colors.accent, fontSize: 15 },
+  section: {
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 16,
+    overflow: 'hidden',
   },
-  settingRowBorder: { borderBottomWidth: 1, borderBottomColor: Colors.border },
-  settingLabel: { fontFamily: 'DM Sans', fontSize: 15, color: Colors.textPrimary },
-  settingRight: { flexDirection: 'row', alignItems: 'center', gap: 6 },
-  settingValue: { fontFamily: 'DM Sans', fontSize: 14, color: Colors.textTertiary },
-  // Delete
-  deleteButton: { alignItems: 'flex-start', paddingHorizontal: 20, paddingVertical: 8 },
-  deleteButtonText: { fontFamily: 'DM Sans', fontSize: 15, color: '#D94040' },
+  settingsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: Colors.borderLight,
+  },
+  rowIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  rowLabel: { ...Typography.bodyMedium, color: Colors.textPrimary, flex: 1, fontWeight: '500' },
+  rowLabelPlain: { ...Typography.bodyMedium, color: Colors.textPrimary, flex: 1 },
+  rowValue: { ...Typography.bodySmall, color: Colors.textTertiary, marginRight: 6 },
+  premiumBadge: {
+    backgroundColor: Colors.accentLight,
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    marginRight: 6,
+  },
+  premiumBadgeText: { ...Typography.label, color: Colors.accent, fontSize: 9 },
+  deleteText: {
+    ...Typography.bodyMedium,
+    color: Colors.danger,
+    textAlign: 'center',
+    paddingVertical: 16,
+  },
+  disclaimer: {
+    ...Typography.caption,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    paddingHorizontal: 20,
+    lineHeight: 18,
+    marginTop: 8,
+  },
 });

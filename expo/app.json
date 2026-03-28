@@ -1,28 +1,28 @@
 {
   "expo": {
-    "name": "MealMate",
-    "slug": "mealmate",
+    "name": "PetLog",
+    "slug": "petlog",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mealmate",
+    "scheme": "petlog",
     "userInterfaceStyle": "light",
     "newArchEnabled": true,
     "splash": {
       "image": "./assets/images/splash-icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#FAFAF7"
+      "backgroundColor": "#FAF8F5"
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.aofnfp.mealmate"
+      "bundleIdentifier": "com.aofnfp.petlog"
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#FAFAF7"
+        "backgroundColor": "#FAF8F5"
       },
-      "package": "com.aofnfp.mealmate"
+      "package": "com.aofnfp.petlog"
     },
     "web": {
       "favicon": "./assets/images/favicon.png"
@@ -31,7 +31,7 @@
       [
         "expo-router",
         {
-          "origin": "https://mealmate.app/"
+          "origin": "https://petlog.app/"
         }
       ]
     ],

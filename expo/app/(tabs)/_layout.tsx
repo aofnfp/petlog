@@ -1,11 +1,11 @@
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { useUserStore } from '@/store/user-store';
+import { usePetStore } from '@/store/pet-store';
 import { Redirect } from 'expo-router';
 
 export default function TabLayout() {
-  const hasCompletedOnboarding = useUserStore((s) => s.hasCompletedOnboarding);
+  const hasCompletedOnboarding = usePetStore((s) => s.hasCompletedOnboarding);
 
   if (!hasCompletedOnboarding) {
     return <Redirect href="/onboarding" />;
@@ -35,27 +35,36 @@ export default function TabLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          title: 'Plan',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="grid-outline" size={22} color={color} />
+          title: 'Home',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="grocery"
+        name="records"
         options={{
-          title: 'Grocery',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="list-outline" size={22} color={color} />
+          title: 'Records',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="document-text-outline" size={22} color={color} />
           ),
         }}
       />
       <Tabs.Screen
-        name="favorites"
+        name="timeline"
         options={{
-          title: 'Favorites',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="star-outline" size={22} color={color} />
+          title: 'Timeline',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="time-outline" size={22} color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="reminders"
+        options={{
+          title: 'Reminders',
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="notifications-outline" size={22} color={color} />
           ),
         }}
       />
@@ -63,8 +72,8 @@ export default function TabLayout() {
         name="settings"
         options={{
           title: 'Settings',
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={22} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="settings-outline" size={22} color={color} />
           ),
         }}
       />

@@ -1,85 +1,124 @@
-export type DietType = 'omnivore' | 'vegetarian' | 'vegan' | 'keto' | 'pescatarian' | 'paleo' | 'gluten-free';
+export type Species = 'dog' | 'cat' | 'other';
+export type WeightUnit = 'lbs' | 'kg';
+export type DoseStatus = 'pending' | 'given' | 'skipped' | 'missed';
+export type FeedingStatus = 'pending' | 'fed' | 'missed';
+export type MedicationFrequency = 'once_daily' | 'twice_daily' | 'three_times_daily' | 'every_other_day' | 'weekly' | 'biweekly' | 'monthly' | 'custom';
+export type VisitType = 'wellness' | 'vaccination' | 'illness' | 'injury' | 'dental' | 'surgery' | 'emergency' | 'followup' | 'other';
 
-export type Allergen = 'nuts' | 'dairy' | 'eggs' | 'shellfish' | 'soy' | 'gluten' | 'fish' | 'sesame';
-
-export type MealType = 'breakfast' | 'lunch' | 'dinner';
-
-export type Difficulty = 'easy' | 'medium' | 'hard';
-
-export type IngredientCategory =
-  | 'produce'
-  | 'dairy'
-  | 'meat'
-  | 'seafood'
-  | 'grains'
-  | 'canned'
-  | 'spices'
-  | 'condiments'
-  | 'frozen'
-  | 'bakery'
-  | 'other';
-
-export interface Ingredient {
-  name: string;
-  quantity: number;
-  unit: string;
-  category: IngredientCategory;
-  isOptional: boolean;
-}
-
-export interface Recipe {
+export interface Pet {
   id: string;
   name: string;
-  description: string;
-  cuisineType: string;
-  mealType: MealType;
-  dietaryTags: DietType[];
-  allergens: Allergen[];
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  prepTimeMinutes: number;
-  cookTimeMinutes: number;
-  totalTimeMinutes: number;
-  servings: number;
-  difficulty: Difficulty;
-  ingredients: Ingredient[];
-  instructions: string[];
-  imageUrl: string | null;
-  source: 'curated' | 'ai_generated';
+  species: Species;
+  breed: string;
+  dateOfBirth: string | null;
+  estimatedAgeMonths: number | null;
+  weight: number | null;
+  weightUnit: WeightUnit;
+  photoUri: string | null;
+  notes: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface MealPlanItem {
-  dayOfWeek: number; // 0=Mon, 6=Sun
-  mealType: MealType;
-  recipeId: string;
-}
-
-export interface MealPlan {
+export interface Vaccination {
   id: string;
-  weekStartDate: string;
-  items: MealPlanItem[];
+  petId: string;
+  vaccineName: string;
+  dateAdministered: string;
+  nextDueDate: string | null;
+  vetName: string;
+  clinicName: string;
+  lotNumber: string;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Medication {
+  id: string;
+  petId: string;
+  name: string;
+  dosageAmount: number;
+  dosageUnit: string;
+  frequency: MedicationFrequency;
+  timesOfDay: string[];
+  startDate: string;
+  endDate: string | null;
+  prescribingVet: string;
+  notes: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface MedicationDose {
+  id: string;
+  medicationId: string;
+  petId: string;
+  scheduledAt: string;
+  status: DoseStatus;
+  loggedAt: string | null;
+  skipReason: string;
   createdAt: string;
 }
 
-export interface GroceryItem {
+export interface VetVisit {
   id: string;
-  ingredientName: string;
-  quantity: number;
-  unit: string;
-  category: IngredientCategory;
-  isChecked: boolean;
-  isManual: boolean;
-  recipeCount: number;
+  petId: string;
+  visitDate: string;
+  visitType: VisitType;
+  clinicName: string;
+  vetName: string;
+  reason: string;
+  diagnosis: string;
+  treatment: string;
+  cost: number | null;
+  followUpDate: string | null;
+  notes: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
-export interface UserProfile {
-  dietType: DietType;
-  allergies: Allergen[];
-  calorieTarget: number | null;
-  hasCompletedOnboarding: boolean;
+export interface WeightEntry {
+  id: string;
+  petId: string;
+  weight: number;
+  weightUnit: WeightUnit;
+  measuredDate: string;
+  notes: string;
+  createdAt: string;
 }
 
-export const DAY_NAMES = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const;
-export const FULL_DAY_NAMES = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'] as const;
+export interface FeedingSchedule {
+  id: string;
+  petId: string;
+  foodName: string;
+  portionSize: number | null;
+  portionUnit: string;
+  mealTime: string;
+  specialInstructions: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface FeedingLog {
+  id: string;
+  scheduleId: string;
+  petId: string;
+  fedAt: string | null;
+  scheduledDate: string;
+  status: FeedingStatus;
+  createdAt: string;
+}
+
+export interface TimelineEvent {
+  id: string;
+  petId: string;
+  type: 'vaccination' | 'medication' | 'vet_visit' | 'weight' | 'milestone';
+  title: string;
+  subtitle: string;
+  date: string;
+  sourceId: string;
+}

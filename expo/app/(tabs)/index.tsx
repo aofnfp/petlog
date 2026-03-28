@@ -1,275 +1,372 @@
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import {
   View,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ScrollView,
-  SafeAreaView,
+  TouchableOpacity,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
-import { useMealStore } from '@/store/meal-store';
-import { getRecipeById } from '@/lib/plan-generator';
-import { DAY_NAMES, MealType, Recipe } from '@/types';
-import SwapSheet from '@/components/SwapSheet';
+import { Typography } from '@/constants/typography';
+import { usePetStore } from '@/store/pet-store';
 
-const MEAL_LABELS: Record<MealType, { label: string; color: string }> = {
-  breakfast: { label: 'BREAKFAST', color: Colors.accent },
-  lunch: { label: 'LUNCH', color: Colors.success },
-  dinner: { label: 'DINNER', color: Colors.warning },
-};
-
-export default function PlanScreen() {
+export default function HomeScreen() {
   const router = useRouter();
-  const { currentPlan, selectedDay, setSelectedDay, generateNewPlan, favorites, toggleFavorite } = useMealStore();
-  const [swapTarget, setSwapTarget] = useState<{ dayOfWeek: number; mealType: MealType; recipeId: string } | null>(null);
+  const {
+    pets,
+    activePetId,
+    vaccinations,
+    medications,
+    vetVisits,
+    weightEntries,
+    medicationDoses,
+    setActivePet,
+  } = usePetStore();
 
-  const today = new Date();
-  const dayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // Mon=0
+  const pet = pets.find((p) => p.id === activePetId);
+  if (!pet) return null;
 
-  // Get Monday of current week
-  const monday = useMemo(() => {
-    const d = new Date(today);
-    const diff = d.getDate() - (d.getDay() === 0 ? 6 : d.getDay() - 1);
-    d.setDate(diff);
-    return d;
-  }, []);
+  const petVaccinations = vaccinations.filter((v) => v.petId === pet.id);
+  const petMedications = medications.filter((m) => m.petId === pet.id && m.isActive);
+  const petVisits = vetVisits.filter((v) => v.petId === pet.id);
+  const petWeights = weightEntries
+    .filter((w) => w.petId === pet.id)
+    .sort((a, b) => b.measuredDate.localeCompare(a.measuredDate));
 
-  const dayDates = useMemo(() => {
-    return DAY_NAMES.map((_, i) => {
-      const d = new Date(monday);
-      d.setDate(d.getDate() + i);
-      return d.getDate();
-    });
-  }, [monday]);
+  const latestWeight = petWeights[0]?.weight ?? pet.weight;
+  const daysSinceLastVisit = petVisits.length > 0
+    ? Math.floor(
+        (Date.now() - new Date(petVisits.sort((a, b) => b.visitDate.localeCompare(a.visitDate))[0].visitDate).getTime()) /
+          (1000 * 60 * 60 * 24)
+      )
+    : null;
 
-  const mealsForDay = useMemo(() => {
-    if (!currentPlan) return [];
-    return currentPlan.items
-      .filter((item) => item.dayOfWeek === selectedDay)
-      .map((item) => ({
-        ...item,
-        recipe: getRecipeById(item.recipeId),
-      }))
-      .filter((item) => item.recipe);
-  }, [currentPlan, selectedDay]);
+  const petAge = pet.dateOfBirth
+    ? `${Math.floor((Date.now() - new Date(pet.dateOfBirth).getTime()) / (1000 * 60 * 60 * 24 * 365))} years`
+    : pet.estimatedAgeMonths
+    ? `${Math.floor(pet.estimatedAgeMonths / 12)} years`
+    : '';
 
-  const dailyTotals = useMemo(() => {
-    let calories = 0, protein = 0, carbs = 0, fat = 0;
-    mealsForDay.forEach((m) => {
-      if (m.recipe) {
-        calories += m.recipe.calories;
-        protein += m.recipe.protein;
-        carbs += m.recipe.carbs;
-        fat += m.recipe.fat;
-      }
-    });
-    return { calories, protein, carbs, fat };
-  }, [mealsForDay]);
+  // Upcoming vaccinations (due within 30 days)
+  const upcomingVax = petVaccinations
+    .filter((v) => v.nextDueDate && new Date(v.nextDueDate) > new Date())
+    .sort((a, b) => (a.nextDueDate || '').localeCompare(b.nextDueDate || ''))
+    .slice(0, 2);
 
-  const dateLabel = today.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' }).toUpperCase();
-
-  if (!currentPlan) {
-    return (
-      <SafeAreaView style={styles.container}>
-        <View style={styles.emptyState}>
-          <Text style={styles.emptyTitle}>No meal plan yet</Text>
-          <Text style={styles.emptySubtitle}>Generate your first weekly plan to get started.</Text>
-          <TouchableOpacity style={styles.generateButton} onPress={generateNewPlan}>
-            <Text style={styles.generateButtonText}>Generate Plan</Text>
-          </TouchableOpacity>
-        </View>
-      </SafeAreaView>
-    );
-  }
+  // Recent activity
+  const recentActivity = [
+    ...petVaccinations.map((v) => ({
+      type: 'vaccination' as const,
+      title: `${v.vaccineName} Vaccination`,
+      subtitle: `${formatDate(v.dateAdministered)}${v.clinicName ? ' · ' + v.clinicName : ''}`,
+      date: v.dateAdministered,
+      icon: 'shield-checkmark' as const,
+      color: Colors.blue,
+    })),
+    ...petVisits.map((v) => ({
+      type: 'vet_visit' as const,
+      title: `${v.visitType.charAt(0).toUpperCase() + v.visitType.slice(1)} visit`,
+      subtitle: `${formatDate(v.visitDate)}${v.vetName ? ' · ' + v.vetName : ''}`,
+      date: v.visitDate,
+      icon: 'medkit' as const,
+      color: Colors.success,
+    })),
+    ...petWeights.map((w) => ({
+      type: 'weight' as const,
+      title: `Weight logged — ${w.weight} ${w.weightUnit}`,
+      subtitle: `${formatDate(w.measuredDate)}${w.notes ? ' · ' + w.notes : ''}`,
+      date: w.measuredDate,
+      icon: 'trending-up' as const,
+      color: Colors.orange,
+    })),
+  ]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .slice(0, 5);
 
   return (
-    <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        {/* Header */}
-        <View style={styles.header}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+      {/* Pet Profile Header */}
+      <View style={styles.header}>
+        <View style={styles.petInfo}>
+          <View style={styles.petAvatar}>
+            <Ionicons name="paw" size={24} color={Colors.accent} />
+          </View>
           <View>
-            <Text style={styles.dateLabel}>{dateLabel}</Text>
-            <Text style={styles.headerTitle}>Today</Text>
-          </View>
-          <View style={styles.headerActions}>
-            <TouchableOpacity style={styles.iconButton} onPress={generateNewPlan}>
-              <Ionicons name="refresh-outline" size={22} color={Colors.textPrimary} />
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.iconButton}>
-              <Ionicons name="star" size={22} color={Colors.accent} />
-            </TouchableOpacity>
+            <Text style={styles.petName}>{pet.name}</Text>
+            <Text style={styles.petBreed}>
+              {pet.breed}{petAge ? ` · ${petAge}` : ''}
+            </Text>
           </View>
         </View>
+        <TouchableOpacity style={styles.notifButton}>
+          <Ionicons name="notifications-outline" size={22} color={Colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
 
-        {/* Day Selector */}
-        <View style={styles.daySelector}>
-          {DAY_NAMES.map((name, i) => (
-            <TouchableOpacity
-              key={name}
-              style={[styles.dayItem, selectedDay === i && styles.dayItemActive]}
-              onPress={() => setSelectedDay(i)}
-            >
-              <Text style={[styles.dayName, selectedDay === i && styles.dayNameActive]}>{name}</Text>
-              <Text style={[styles.dayDate, selectedDay === i && styles.dayDateActive]}>{dayDates[i]}</Text>
-            </TouchableOpacity>
-          ))}
+      {/* Quick Stats */}
+      <View style={styles.statsRow}>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{latestWeight || '—'}</Text>
+          <Text style={styles.statLabel}>LBS</Text>
         </View>
+        <View style={[styles.statCard, { borderColor: Colors.accentLight }]}>
+          <Text style={[styles.statNumber, { color: Colors.accent }]}>{petVaccinations.length}</Text>
+          <Text style={styles.statLabel}>VACCINES</Text>
+        </View>
+        <View style={[styles.statCard, { borderColor: Colors.purpleLight }]}>
+          <Text style={[styles.statNumber, { color: Colors.purple }]}>{petMedications.length}</Text>
+          <Text style={styles.statLabel}>ACTIVE{'\n'}MEDS</Text>
+        </View>
+        <View style={styles.statCard}>
+          <Text style={styles.statNumber}>{daysSinceLastVisit ?? '—'}</Text>
+          <Text style={styles.statLabel}>DAYS AGO</Text>
+        </View>
+      </View>
 
-        {/* Meal Cards */}
-        <View style={styles.mealList}>
-          {mealsForDay.map((meal) => {
-            const recipe = meal.recipe as Recipe;
-            const mealMeta = MEAL_LABELS[meal.mealType];
+      {/* Upcoming */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>UPCOMING</Text>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/records' as any)}>
+          <Text style={styles.viewAll}>View All</Text>
+        </TouchableOpacity>
+      </View>
+
+      {upcomingVax.length > 0 ? (
+        upcomingVax.map((vax) => {
+          const daysUntil = Math.ceil(
+            (new Date(vax.nextDueDate!).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
+          );
+          return (
+            <View key={vax.id} style={styles.upcomingCard}>
+              <View style={[styles.upcomingIcon, { backgroundColor: Colors.warningLight }]}>
+                <Ionicons name="time-outline" size={20} color={Colors.warning} />
+              </View>
+              <View style={styles.upcomingText}>
+                <Text style={styles.upcomingTitle}>{vax.vaccineName} due</Text>
+                <Text style={styles.upcomingSubtitle}>
+                  In {daysUntil} days · {formatDate(vax.nextDueDate!)}
+                </Text>
+              </View>
+              <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
+            </View>
+          );
+        })
+      ) : (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>No upcoming vaccinations</Text>
+        </View>
+      )}
+
+      {/* Today's Medications */}
+      {petMedications.length > 0 && (
+        <>
+          {petMedications.slice(0, 2).map((med) => {
+            const todayDoses = medicationDoses.filter(
+              (d) =>
+                d.medicationId === med.id &&
+                d.scheduledAt.split('T')[0] === new Date().toISOString().split('T')[0]
+            );
+            const isDone = todayDoses.some((d) => d.status === 'given');
             return (
-              <TouchableOpacity
-                key={`${meal.dayOfWeek}-${meal.mealType}`}
-                style={styles.mealCard}
-                onPress={() => router.push(`/recipe/${recipe.id}`)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.mealCardThumb}>
-                  <Text style={styles.mealCardEmoji}>
-                    {meal.mealType === 'breakfast' ? '🍳' : meal.mealType === 'lunch' ? '🥗' : '🍽️'}
-                  </Text>
+              <View key={med.id} style={styles.medCard}>
+                <View style={[styles.upcomingIcon, { backgroundColor: Colors.purpleLight }]}>
+                  <Ionicons name="medical" size={20} color={Colors.purple} />
                 </View>
-                <View style={styles.mealCardContent}>
-                  <Text style={[styles.mealCardLabel, { color: mealMeta.color }]}>{mealMeta.label}</Text>
-                  <Text style={styles.mealCardTitle} numberOfLines={2}>{recipe.name}</Text>
-                  <Text style={styles.mealCardMeta}>
-                    {recipe.calories} cal  |  {recipe.totalTimeMinutes} min
+                <View style={styles.upcomingText}>
+                  <Text style={styles.upcomingTitle}>
+                    {med.name} {med.dosageAmount}{med.dosageUnit}
+                  </Text>
+                  <Text style={styles.upcomingSubtitle}>
+                    {med.timesOfDay[0] || 'Daily'} dose
                   </Text>
                 </View>
                 <TouchableOpacity
-                  style={styles.swapIconButton}
-                  onPress={(e) => {
-                    e.stopPropagation();
-                    setSwapTarget({ dayOfWeek: meal.dayOfWeek, mealType: meal.mealType, recipeId: recipe.id });
+                  style={[styles.checkbox, isDone && styles.checkboxDone]}
+                  onPress={() => {
+                    if (!isDone) {
+                      usePetStore.getState().logDose(med.id, pet.id, 'given');
+                    }
                   }}
-                  hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
                 >
-                  <Ionicons name="swap-horizontal-outline" size={18} color={Colors.textTertiary} />
+                  {isDone && <Ionicons name="checkmark" size={16} color="#FFF" />}
                 </TouchableOpacity>
-              </TouchableOpacity>
+              </View>
             );
           })}
-        </View>
-
-        {/* Daily Macro Summary */}
-        <View style={styles.macroBar}>
-          <View>
-            <Text style={styles.macroLabel}>Daily total</Text>
-            <Text style={styles.macroCalories}>{dailyTotals.calories.toLocaleString()} cal</Text>
-          </View>
-          <View style={styles.macroValues}>
-            <Text style={styles.macroValue}>
-              <Text style={{ color: Colors.accent, fontWeight: '700' }}>{dailyTotals.protein}g</Text>
-              {'\n'}Protein
-            </Text>
-            <Text style={styles.macroValue}>
-              <Text style={{ color: Colors.success, fontWeight: '700' }}>{dailyTotals.carbs}g</Text>
-              {'\n'}Carbs
-            </Text>
-            <Text style={styles.macroValue}>
-              <Text style={{ color: Colors.warning, fontWeight: '700' }}>{dailyTotals.fat}g</Text>
-              {'\n'}Fat
-            </Text>
-          </View>
-        </View>
-
-        <View style={{ height: 20 }} />
-      </ScrollView>
-
-      {swapTarget && (
-        <SwapSheet
-          visible={!!swapTarget}
-          onClose={() => setSwapTarget(null)}
-          dayOfWeek={swapTarget.dayOfWeek}
-          mealType={swapTarget.mealType}
-          currentRecipeId={swapTarget.recipeId}
-        />
+        </>
       )}
-    </SafeAreaView>
+
+      {/* Recent Activity */}
+      <View style={styles.sectionHeader}>
+        <Text style={styles.sectionTitle}>RECENT ACTIVITY</Text>
+        <TouchableOpacity onPress={() => router.push('/(tabs)/timeline')}>
+          <Text style={styles.viewAll}>View All</Text>
+        </TouchableOpacity>
+      </View>
+
+      {recentActivity.length > 0 ? (
+        recentActivity.map((item, index) => (
+          <View key={index} style={styles.activityRow}>
+            <View style={[styles.activityDot, { backgroundColor: item.color }]}>
+              <Ionicons name={item.icon as any} size={14} color="#FFF" />
+            </View>
+            <View style={styles.activityText}>
+              <Text style={styles.activityTitle}>{item.title}</Text>
+              <Text style={styles.activitySubtitle}>{item.subtitle}</Text>
+            </View>
+          </View>
+        ))
+      ) : (
+        <View style={styles.emptyCard}>
+          <Text style={styles.emptyText}>No activity yet. Start by adding a record!</Text>
+        </View>
+      )}
+
+      <View style={{ height: 24 }} />
+    </ScrollView>
   );
+}
+
+function formatDate(dateStr: string): string {
+  const d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },
-  // Header
+  content: { paddingHorizontal: 20, paddingTop: 60 },
   header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start',
-    paddingHorizontal: 20, paddingTop: 8, paddingBottom: 12,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 20,
   },
-  dateLabel: {
-    fontFamily: 'DM Sans', fontSize: 11, fontWeight: '600', letterSpacing: 0.8,
-    color: Colors.textTertiary, marginBottom: 2,
+  petInfo: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  petAvatar: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: Colors.accentLight,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  headerTitle: {
-    fontFamily: 'DM Serif Display', fontSize: 32, letterSpacing: -0.64, color: Colors.textPrimary,
+  petName: { ...Typography.titleLarge, color: Colors.textPrimary },
+  petBreed: { ...Typography.bodySmall, color: Colors.textSecondary, marginTop: 2 },
+  notifButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  headerActions: { flexDirection: 'row', gap: 8, paddingTop: 8 },
-  iconButton: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: Colors.surface,
-    alignItems: 'center', justifyContent: 'center',
-    borderWidth: 1, borderColor: Colors.border,
+  statsRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 24,
   },
-  // Day selector
-  daySelector: {
-    flexDirection: 'row', paddingHorizontal: 16, marginBottom: 20, gap: 4,
+  statCard: {
+    flex: 1,
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    paddingVertical: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
   },
-  dayItem: {
-    flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 12,
+  statNumber: {
+    ...Typography.displaySmall,
+    color: Colors.textPrimary,
+    fontSize: 26,
+    lineHeight: 30,
   },
-  dayItemActive: {
+  statLabel: {
+    ...Typography.label,
+    color: Colors.textTertiary,
+    fontSize: 9,
+    marginTop: 4,
+    textAlign: 'center',
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+    marginTop: 4,
+  },
+  sectionTitle: { ...Typography.label, color: Colors.textSecondary },
+  viewAll: { ...Typography.bodySmall, color: Colors.accent, fontWeight: '600' },
+  upcomingCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  upcomingIcon: {
+    width: 40,
+    height: 40,
+    borderRadius: 10,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12,
+  },
+  upcomingText: { flex: 1 },
+  upcomingTitle: { ...Typography.titleMedium, color: Colors.textPrimary, fontSize: 15 },
+  upcomingSubtitle: { ...Typography.bodySmall, color: Colors.textSecondary, marginTop: 2 },
+  medCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    padding: 16,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: Colors.border,
+  },
+  checkbox: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    borderWidth: 2,
+    borderColor: Colors.border,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  checkboxDone: {
     backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
   },
-  dayName: {
-    fontFamily: 'DM Sans', fontSize: 11, fontWeight: '600', color: Colors.textTertiary, marginBottom: 4,
+  activityRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 12,
+    gap: 12,
   },
-  dayNameActive: { color: '#fff' },
-  dayDate: {
-    fontFamily: 'DM Sans', fontSize: 16, fontWeight: '700', color: Colors.textPrimary,
+  activityDot: {
+    width: 32,
+    height: 32,
+    borderRadius: 8,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  dayDateActive: { color: '#fff' },
-  // Meal cards
-  mealList: { paddingHorizontal: 20, gap: 12 },
-  mealCard: {
-    flexDirection: 'row', backgroundColor: Colors.surface, borderRadius: 16,
-    padding: 14, borderWidth: 1, borderColor: Colors.border,
+  activityText: { flex: 1 },
+  activityTitle: { ...Typography.bodyMedium, color: Colors.textPrimary, fontWeight: '600' },
+  activitySubtitle: { ...Typography.caption, color: Colors.textSecondary, marginTop: 2 },
+  emptyCard: {
+    backgroundColor: Colors.surface,
+    borderRadius: 14,
+    padding: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: Colors.border,
+    marginBottom: 8,
   },
-  mealCardThumb: {
-    width: 64, height: 64, borderRadius: 12, backgroundColor: Colors.accentLight,
-    alignItems: 'center', justifyContent: 'center', marginRight: 14,
-  },
-  mealCardEmoji: { fontSize: 28 },
-  mealCardContent: { flex: 1, justifyContent: 'center' },
-  mealCardLabel: {
-    fontFamily: 'DM Sans', fontSize: 11, fontWeight: '700', letterSpacing: 0.8, marginBottom: 4,
-  },
-  mealCardTitle: {
-    fontFamily: 'DM Sans', fontSize: 16, fontWeight: '600', color: Colors.textPrimary, marginBottom: 4,
-  },
-  mealCardMeta: { fontFamily: 'DM Sans', fontSize: 13, color: Colors.textTertiary },
-  swapIconButton: {
-    width: 36, height: 36, borderRadius: 18, backgroundColor: Colors.background,
-    alignItems: 'center', justifyContent: 'center', alignSelf: 'center',
-  },
-  // Macro bar
-  macroBar: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    marginHorizontal: 20, marginTop: 24, paddingVertical: 16,
-    borderTopWidth: 1, borderTopColor: Colors.border,
-  },
-  macroLabel: { fontFamily: 'DM Sans', fontSize: 13, color: Colors.textTertiary },
-  macroCalories: { fontFamily: 'DM Serif Display', fontSize: 24, color: Colors.textPrimary },
-  macroValues: { flexDirection: 'row', gap: 16 },
-  macroValue: { fontFamily: 'DM Sans', fontSize: 12, color: Colors.textTertiary, textAlign: 'center', lineHeight: 18 },
-  // Empty state
-  emptyState: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 40 },
-  emptyTitle: { fontFamily: 'DM Serif Display', fontSize: 24, color: Colors.textPrimary, marginBottom: 8 },
-  emptySubtitle: { fontFamily: 'DM Sans', fontSize: 15, color: Colors.textSecondary, textAlign: 'center', marginBottom: 32 },
-  generateButton: { backgroundColor: Colors.accent, borderRadius: 16, paddingVertical: 16, paddingHorizontal: 48 },
-  generateButtonText: { fontFamily: 'DM Sans', fontSize: 16, fontWeight: '700', color: '#fff' },
+  emptyText: { ...Typography.bodyMedium, color: Colors.textTertiary },
 });

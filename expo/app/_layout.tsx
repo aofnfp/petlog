@@ -19,8 +19,10 @@ export default function RootLayout() {
       <Stack screenOptions={{ headerShown: false }}>
         <Stack.Screen name="(tabs)" />
         <Stack.Screen name="onboarding" options={{ gestureEnabled: false }} />
-        <Stack.Screen name="recipe/[id]" options={{ presentation: 'card' }} />
-        <Stack.Screen name="history" options={{ presentation: 'card' }} />
+        <Stack.Screen name="add-vaccination" options={{ presentation: 'card' }} />
+        <Stack.Screen name="add-medication" options={{ presentation: 'card' }} />
+        <Stack.Screen name="add-vet-visit" options={{ presentation: 'card' }} />
+        <Stack.Screen name="add-weight" options={{ presentation: 'card' }} />
       </Stack>
     </GestureHandlerRootView>
   );
