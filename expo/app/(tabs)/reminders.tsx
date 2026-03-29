@@ -233,9 +233,9 @@ const styles = StyleSheet.create({
   cardTitleDone: { textDecorationLine: 'line-through', color: Colors.textTertiary },
   cardSub: { ...Typography.caption, color: Colors.textSecondary, marginTop: 2 },
   doseCheck: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     borderWidth: 2,
     borderColor: Colors.border,
     justifyContent: 'center',
