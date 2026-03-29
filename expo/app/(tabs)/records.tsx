@@ -224,13 +224,19 @@ export default function RecordsScreen() {
 
         {activeTab === 'weight' && (
           <>
-            {petWeights.length > 0 && (
+            {petWeights.length > 0 && (() => {
+              const trend = petWeights.length >= 2
+                ? petWeights[0].weight - petWeights[1].weight
+                : 0;
+              const trendLabel = trend > 0.1 ? 'Gaining' : trend < -0.1 ? 'Losing' : 'Stable';
+              const trendIcon = trend > 0.1 ? 'trending-up' as const : trend < -0.1 ? 'trending-down' as const : 'remove-outline' as const;
+              return (
               <>
                 <View style={styles.weightHeader}>
                   <Text style={styles.weightCurrent}>{petWeights[0].weight.toFixed(1)}</Text>
                   <View style={styles.stableBadge}>
-                    <Ionicons name="trending-up" size={14} color={Colors.accent} />
-                    <Text style={styles.stableBadgeText}>Stable</Text>
+                    <Ionicons name={trendIcon} size={14} color={Colors.accent} />
+                    <Text style={styles.stableBadgeText}>{trendLabel}</Text>
                   </View>
                 </View>
                 <Text style={styles.weightUnit}>
@@ -243,7 +249,8 @@ export default function RecordsScreen() {
                   <Text style={styles.chartLabel}>Weight trend</Text>
                 </View>
               </>
-            )}
+              );
+            })()}
 
             <Text style={styles.sectionLabel}>HISTORY</Text>
             {petWeights.length > 0 ? (

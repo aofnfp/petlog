@@ -22,6 +22,7 @@ export default function HomeScreen() {
     vetVisits,
     weightEntries,
     medicationDoses,
+    weightUnit,
     setActivePet,
   } = usePetStore();
 
@@ -109,7 +110,7 @@ export default function HomeScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statCard}>
           <Text style={styles.statNumber}>{latestWeight || '—'}</Text>
-          <Text style={styles.statLabel}>LBS</Text>
+          <Text style={styles.statLabel}>{weightUnit.toUpperCase()}</Text>
         </View>
         <View style={[styles.statCard, { borderColor: Colors.accentLight }]}>
           <Text style={[styles.statNumber, { color: Colors.accent }]}>{petVaccinations.length}</Text>

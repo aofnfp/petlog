@@ -16,6 +16,7 @@ import { Typography } from '@/constants/typography';
 import { usePetStore } from '@/store/pet-store';
 import { Species } from '@/types';
 import { DOG_BREEDS, CAT_BREEDS } from '@/constants/vaccines';
+import { safeParseFloat, filterNumericInput } from '@/lib/validation';
 
 type Step = 'welcome' | 'add-pet' | 'first-record';
 
@@ -39,7 +40,7 @@ export default function OnboardingScreen() {
       breed: breed || 'Mixed/Other',
       dateOfBirth: dateOfBirth || null,
       estimatedAgeMonths: null,
-      weight: weight ? parseFloat(weight) : null,
+      weight: safeParseFloat(weight),
       weightUnit: 'lbs',
       photoUri: null,
       notes: '',
@@ -166,7 +167,7 @@ export default function OnboardingScreen() {
                 placeholder="42 lbs"
                 placeholderTextColor={Colors.textTertiary}
                 value={weight}
-                onChangeText={setWeight}
+                onChangeText={(t) => setWeight(filterNumericInput(t))}
                 keyboardType="numeric"
               />
             </View>

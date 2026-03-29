@@ -16,6 +16,7 @@ import { Typography } from '@/constants/typography';
 import { usePetStore } from '@/store/pet-store';
 import { VisitType } from '@/types';
 import { VISIT_TYPE_LABELS } from '@/constants/vaccines';
+import { isValidDateString, safeParseFloat, filterNumericInput } from '@/lib/validation';
 
 const VISIT_TYPES: VisitType[] = [
   'wellness', 'vaccination', 'illness', 'injury', 'dental', 'surgery', 'emergency', 'followup', 'other',
@@ -37,6 +38,7 @@ export default function AddVetVisitScreen() {
 
   const handleSave = () => {
     if (!activePetId) return;
+    if (!isValidDateString(visitDate)) return;
     addVetVisit({
       petId: activePetId,
       visitDate,
@@ -46,7 +48,7 @@ export default function AddVetVisitScreen() {
       reason,
       diagnosis,
       treatment,
-      cost: cost ? parseFloat(cost) : null,
+      cost: safeParseFloat(cost),
       followUpDate: null,
       notes,
     });
@@ -150,7 +152,7 @@ export default function AddVetVisitScreen() {
           placeholder="$0.00"
           placeholderTextColor={Colors.textTertiary}
           value={cost}
-          onChangeText={setCost}
+          onChangeText={(t) => setCost(filterNumericInput(t))}
           keyboardType="numeric"
         />
 

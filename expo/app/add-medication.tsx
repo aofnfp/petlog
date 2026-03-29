@@ -16,6 +16,7 @@ import { Typography } from '@/constants/typography';
 import { usePetStore } from '@/store/pet-store';
 import { MedicationFrequency } from '@/types';
 import { FREQUENCY_LABELS } from '@/constants/vaccines';
+import { isValidDateString, safeParseFloat, filterNumericInput } from '@/lib/validation';
 
 const FREQUENCIES: MedicationFrequency[] = [
   'once_daily', 'twice_daily', 'three_times_daily', 'weekly', 'monthly',
@@ -45,11 +46,14 @@ export default function AddMedicationScreen() {
   };
 
   const handleSave = () => {
-    if (!name.trim() || !dosageAmount || !activePetId) return;
+    const parsedDosage = safeParseFloat(dosageAmount);
+    if (!name.trim() || parsedDosage === null || !activePetId) return;
+    if (!isValidDateString(startDate)) return;
+    if (endDate && !isValidDateString(endDate)) return;
     addMedication({
       petId: activePetId,
       name: name.trim(),
-      dosageAmount: parseFloat(dosageAmount),
+      dosageAmount: parsedDosage,
       dosageUnit,
       frequency,
       timesOfDay: getDefaultTimes(frequency),
@@ -104,7 +108,7 @@ export default function AddMedicationScreen() {
               placeholder="25"
               placeholderTextColor={Colors.textTertiary}
               value={dosageAmount}
-              onChangeText={setDosageAmount}
+              onChangeText={(t) => setDosageAmount(filterNumericInput(t))}
               keyboardType="numeric"
             />
           </View>

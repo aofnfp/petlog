@@ -15,6 +15,7 @@ import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { usePetStore } from '@/store/pet-store';
 import { getPresetsForSpecies } from '@/constants/vaccines';
+import { isValidDateString } from '@/lib/validation';
 
 export default function AddVaccinationScreen() {
   const router = useRouter();
@@ -42,6 +43,8 @@ export default function AddVaccinationScreen() {
 
   const handleSave = () => {
     if (!vaccineName.trim() || !activePetId) return;
+    if (!isValidDateString(dateAdministered)) return;
+    if (nextDueDate && !isValidDateString(nextDueDate)) return;
     addVaccination({
       petId: activePetId,
       vaccineName: vaccineName.trim(),

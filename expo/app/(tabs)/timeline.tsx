@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { usePetStore } from '@/store/pet-store';
+import { Vaccination, Medication, VetVisit, WeightEntry } from '@/types';
 import { VISIT_TYPE_LABELS, FREQUENCY_LABELS } from '@/constants/vaccines';
 
 type FilterType = 'all' | 'vaccines' | 'meds' | 'vet' | 'weight';
@@ -90,16 +91,26 @@ export default function TimelineScreen() {
   );
 }
 
+interface TimelineEvent {
+  id: string;
+  type: string;
+  title: string;
+  subtitle: string;
+  date: string;
+  icon: string;
+  color: string;
+}
+
 function buildTimeline(
   petId: string | null,
-  vaccinations: any[],
-  medications: any[],
-  vetVisits: any[],
-  weightEntries: any[],
+  vaccinations: Vaccination[],
+  medications: Medication[],
+  vetVisits: VetVisit[],
+  weightEntries: WeightEntry[],
   filter: FilterType
-) {
+): TimelineEvent[] {
   if (!petId) return [];
-  const events: any[] = [];
+  const events: TimelineEvent[] = [];
 
   if (filter === 'all' || filter === 'vaccines') {
     vaccinations

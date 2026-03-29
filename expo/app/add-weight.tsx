@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { usePetStore } from '@/store/pet-store';
+import { isValidDateString, safeParseFloat, filterNumericInput } from '@/lib/validation';
 
 export default function AddWeightScreen() {
   const router = useRouter();
@@ -23,8 +24,9 @@ export default function AddWeightScreen() {
   const [notes, setNotes] = useState('');
 
   const handleSave = () => {
-    if (!weight || !activePetId) return;
-    const weightNum = parseFloat(weight);
+    const weightNum = safeParseFloat(weight);
+    if (weightNum === null || !activePetId) return;
+    if (!isValidDateString(measuredDate)) return;
     addWeightEntry({
       petId: activePetId,
       weight: weightNum,
@@ -32,7 +34,6 @@ export default function AddWeightScreen() {
       measuredDate,
       notes,
     });
-    // Also update pet profile weight
     updatePet(activePetId, { weight: weightNum, weightUnit });
     router.back();
   };
@@ -64,7 +65,7 @@ export default function AddWeightScreen() {
             placeholder="0.0"
             placeholderTextColor={Colors.textTertiary}
             value={weight}
-            onChangeText={setWeight}
+            onChangeText={(t) => setWeight(filterNumericInput(t))}
             keyboardType="numeric"
             autoFocus
           />
