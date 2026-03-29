@@ -27,6 +27,7 @@
     "web": {
       "favicon": "./assets/images/favicon.png"
     },
+    "privacyPolicyUrl": "https://abrahamoladotun.org/apps/petlog/privacy",
     "plugins": [
       [
         "expo-router",

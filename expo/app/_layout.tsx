@@ -23,6 +23,7 @@ export default function RootLayout() {
         <Stack.Screen name="add-medication" options={{ presentation: 'card' }} />
         <Stack.Screen name="add-vet-visit" options={{ presentation: 'card' }} />
         <Stack.Screen name="add-weight" options={{ presentation: 'card' }} />
+        <Stack.Screen name="privacy" options={{ presentation: 'card' }} />
       </Stack>
     </GestureHandlerRootView>
   );

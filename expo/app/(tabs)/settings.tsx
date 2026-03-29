@@ -8,11 +8,13 @@ import {
   Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Colors } from '@/constants/colors';
 import { Typography } from '@/constants/typography';
 import { usePetStore } from '@/store/pet-store';
 
 export default function SettingsScreen() {
+  const router = useRouter();
   const { pets, weightUnit, setWeightUnit, deleteAllData } = usePetStore();
 
   const handleDeleteAll = () => {
@@ -106,7 +108,7 @@ export default function SettingsScreen() {
 
         {/* About */}
         <View style={styles.section}>
-          <TouchableOpacity style={styles.settingsRow}>
+          <TouchableOpacity style={styles.settingsRow} onPress={() => router.push('/privacy')}>
             <Text style={styles.rowLabelPlain}>Privacy Policy</Text>
             <Ionicons name="chevron-forward" size={18} color={Colors.textTertiary} />
           </TouchableOpacity>
