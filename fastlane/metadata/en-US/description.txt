@@ -1,0 +1,11 @@
+PetLog is a comprehensive pet care tracker for devoted pet owners. Keep all your pet's health records, medications, vet visits, and feeding schedules organized in one place.
+
+Features:
+• Track multiple pets with individual profiles
+• Medication reminders and health records
+• Vet visit history and upcoming appointment reminders
+• Feeding schedule and weight tracking
+• Vaccination records and expiry alerts
+• Notes and photo diary
+
+Built by the Abraham Oladotun Foundation NFP.
