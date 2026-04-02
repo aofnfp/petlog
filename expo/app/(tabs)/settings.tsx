@@ -184,6 +184,8 @@ export default function SettingsScreen() {
           Always follow your veterinarian's instructions.
         </Text>
 
+        <Text style={styles.brandingText}>App by aoftech</Text>
+
         <View style={{ height: 40 }} />
       </ScrollView>
     </View>
@@ -269,5 +271,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     lineHeight: 18,
     marginTop: 8,
+  },
+  brandingText: {
+    fontSize: 11,
+    color: Colors.textTertiary,
+    textAlign: 'center',
+    marginTop: 24,
   },
 });
